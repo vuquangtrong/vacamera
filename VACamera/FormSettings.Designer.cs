@@ -91,7 +91,7 @@
             // txtCamera1
             // 
             this.txtCamera1.AutoSize = true;
-            this.txtCamera1.Location = new System.Drawing.Point(14, 138);
+            this.txtCamera1.Location = new System.Drawing.Point(12, 138);
             this.txtCamera1.Name = "txtCamera1";
             this.txtCamera1.Size = new System.Drawing.Size(112, 21);
             this.txtCamera1.TabIndex = 0;

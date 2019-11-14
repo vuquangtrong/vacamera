@@ -18,8 +18,8 @@ namespace VACamera
         BurnData _burnData1 = new BurnData();
         BurnData _burnData2 = new BurnData();
 
-        bool _isFinish1 = false;
-        bool _isFinish2 = false;
+        bool _isRecordSuccess1 = false;
+        bool _isRecordSuccess2 = false;
 
         bool _closeMedia = true;
         bool _ejectMedia = true;
@@ -236,12 +236,12 @@ namespace VACamera
         {
             if (btnWrite1.Enabled)
             {
-                btnWrite1_Click(new object(), new EventArgs());
+                btnWrite1.PerformClick();
             }
 
             if (btnWrite2.Enabled)
             {
-                btnWrite2_Click(new object(), new EventArgs());
+                btnWrite2.PerformClick();
             }
         }
 
@@ -557,7 +557,7 @@ namespace VACamera
             progressBar1.Value = 0;
 
             _isBurning1 = false;
-            _isFinish1 = true;
+            _isRecordSuccess1 = ((int)e.Result == 0);
             btnWrite1.Enabled = true;
 
             doAfterBurnWork();
@@ -569,7 +569,7 @@ namespace VACamera
             progressBar2.Value = 0;
 
             _isBurning2 = false;
-            _isFinish2 = true;
+            _isRecordSuccess2 = ((int)e.Result == 0);
             btnWrite2.Enabled = true;
 
             doAfterBurnWork();
@@ -940,14 +940,17 @@ namespace VACamera
         {
             if (!(_isBurning1 || _isBurning2))
             {
-                // clean file
-                try
+                // only clean file if it is already burned to disk
+                if (_isRecordSuccess1 || _isRecordSuccess2)
                 {
-                    File.Delete(_filePath);
-                }
-                catch (Exception ex)
-                {
-                    Log.WriteLine(ex.ToString());
+                    try
+                    {
+                        File.Delete(_filePath);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.WriteLine(ex.ToString());
+                    }
                 }
 
                 // show new session
@@ -960,21 +963,27 @@ namespace VACamera
                         {
                             if (CountNewDisk() > 0)
                             {
+                                Log.WriteLine(">>> Open new session!");
                                 DialogResult = DialogResult.Yes;
                                 Close();
+                                return;
                             }
                         } // cancel to force close
                         else
                         {
-                            DialogResult = DialogResult.No;
+                            Log.WriteLine("Cancel inserting new disk!");
+                            DialogResult = DialogResult.Cancel;
                             Close();
+                            return;
                         }
                     }
                 }
                 else
                 {
+                    Log.WriteLine("Do NOT open new session!");
                     DialogResult = DialogResult.No;
                     Close();
+                    return;
                 }
             }
         }

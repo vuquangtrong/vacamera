@@ -135,8 +135,6 @@ namespace VACamera
 
             // debug runtime
             //timer1.Stop();
-
-            settings.SaveSettings();
         }
 
         //private void VideoRenderWorker()
@@ -318,6 +316,38 @@ namespace VACamera
             timerFPS.Start();
 
             Log.WriteLine(settings.ToString());
+        }
+
+        private void PausePreview()
+        {
+            if (audioDevice != null)
+            {
+                audioDevice.NewFrame -= AudioDevice_NewFrame;
+            }
+            if (videoDevice1 != null)
+            {
+                videoDevice1.NewFrame -= VideoDevice1_NewFrame;
+            }
+            if (videoDevice2 != null)
+            {
+                videoDevice2.NewFrame -= VideoDevice2_NewFrame;
+            }
+        }
+
+        private void ResumePreview()
+        {
+            if (audioDevice != null)
+            {
+                audioDevice.NewFrame += AudioDevice_NewFrame;
+            }
+            if (videoDevice1 != null)
+            {
+                videoDevice1.NewFrame += VideoDevice1_NewFrame;
+            }
+            if (videoDevice2 != null)
+            {
+                videoDevice2.NewFrame += VideoDevice2_NewFrame;
+            }
         }
 
         private void StopDevices()
@@ -745,7 +775,10 @@ namespace VACamera
             }
 
             UpdateRecordTime(0);
-            InitDevices();
+
+            //InitDevices(); // this process is slow
+            ResumePreview();
+
             Show();
         }
 
@@ -770,11 +803,6 @@ namespace VACamera
 
                 }
             }
-        }
-
-        private void FormMain_KeyPress(object sender, KeyPressEventArgs e)
-        {
-
         }
 
         private void btnRecord_Click(object sender, EventArgs e)
@@ -830,8 +858,10 @@ namespace VACamera
                     StopRecording();
                     Thread.Sleep(1000);
 
-                    StopDevices();
-                    btnWriteDisk_Click(new object(), new EventArgs());
+                    //StopDevices(); // this method is slow
+                    PausePreview();
+
+                    btnWriteDisk_Click(btnWriteDisk, EventArgs.Empty);
                 }
             }
         }
@@ -944,6 +974,28 @@ namespace VACamera
             runtime++;
             TimeSpan timeRun = TimeSpan.FromSeconds(runtime);
             Log.WriteLine(timeRun.ToString("hh':'mm':'ss"));
+        }
+
+        private void FormMain_KeyDown(object sender, KeyEventArgs e)
+        {
+            Log.WriteLine(e.KeyCode.ToString());
+            switch (e.KeyCode)
+            {
+                case Keys.F5:
+                    btnRecord.PerformClick(); // won't perform if button is disabled
+                    break;
+                case Keys.F6:
+                    btnPause.PerformClick();
+                    break;
+                case Keys.F7:
+                    btnReplay.PerformClick();
+                    break;
+                case Keys.F8:
+                    btnStop.PerformClick();
+                    break;
+                default:
+                    break;
+            }
         }
     }
 }

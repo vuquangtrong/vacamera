@@ -1,1 +1,0 @@
-del *.xml *.pdb *.config *.log *.MP4

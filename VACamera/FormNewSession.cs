@@ -48,7 +48,7 @@ namespace VACamera
                 SessionInfo.Name3 = textName3.Text;
                 SessionInfo.Name4 = textName4.Text;
                 SessionInfo.Name5 = textName5.Text;
-                SessionInfo.DateTime = DateTime.Now.ToString("yyyyMMdd_HHmm");
+                SessionInfo.DateTime = DateTime.Now.ToString("yyyyMMdd_HHmmss");
 
                 DialogResult = DialogResult.OK;
                 Close();

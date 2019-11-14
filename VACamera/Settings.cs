@@ -72,7 +72,7 @@ namespace VACamera
         {
             if (mode == null || mode.Equals(""))
             {
-                AudioChannel = AudioMode.Stereo;
+                AudioChannel = AudioMode.Mono;
             }
             else
             {
@@ -82,7 +82,7 @@ namespace VACamera
                 }
                 catch (Exception ex)
                 {
-                    AudioChannel = AudioMode.Stereo;
+                    AudioChannel = AudioMode.Mono;
                     Log.WriteLine(ex.ToString());
                 }
             }

@@ -190,16 +190,19 @@ namespace VACamera
                     }
 
                     // setup audio device
+
                     audioDevice = new AudioCaptureDevice(audioDeviceInfo)
                     {
-                        Format = SampleFormat.Format32Bit,
+                        Format = SampleFormat.Format32BitIeeeFloat, // 32bit Float
+                        // NumberOfChannels = 1, // current, Accord only supports Mono
                         SampleRate = settings.AudioSampleRate, // 44100 Hz
                         DesiredFrameSize = settings.AudioFrameSize // 40 Kb
                     };
                     Log.WriteLine("audioDevice.Format = " + audioDevice.Format.ToString());
                     Log.WriteLine("audioDevice.SampleRate = " + audioDevice.SampleRate);
                     Log.WriteLine("audioDevice.DesiredFrameSize = " + audioDevice.DesiredFrameSize);
-                    Log.WriteLine("audioDevice.Channels = " + audioDevice.Channels);
+                    Log.WriteLine("audioDevice.NumberOfChannels = " + audioDevice.NumberOfChannels);
+
                     audioDevice.NewFrame += AudioDevice_NewFrame;
                     audioDevice.Start();
                     Log.WriteLine(">>> START audioDevice: " + audioDeviceInfo.Description + "|" + audioDeviceInfo.Guid.ToString());
@@ -410,7 +413,7 @@ namespace VACamera
                 {
                     if (videoRecordState == VideoRecordState.RECORDING)
                     {
-                        videoFileWriter.WriteAudioFrame(e.Signal.RawData);
+                        videoFileWriter.WriteAudioFrame(e.Signal);
                     }
                 }
                 catch (Exception ex)
@@ -600,42 +603,42 @@ namespace VACamera
         {
             if (videoRecordState == VideoRecordState.IDLE)
             {
-                VideoCodec videoCodec = VideoCodec.MPEG4;
+                VideoCodec videoCodec = VideoCodec.Mpeg4;
                 string videoExtension = ".mp4";
 
                 if (settings.VideoOutputFormat == Settings.VideoFormat.MPEG2)
                 {
-                    videoCodec = VideoCodec.MPEG2;
+                    videoCodec = VideoCodec.Mpeg2;
                     videoExtension = ".mpg";
                 }
 
                 outputFile = outputFolder + "\\" + sessionInfo.DateTime + videoExtension;
 
+                videoFileWriter = new VideoFileWriter();
+                videoFileWriter.BitRate = settings.VideoBitRate;
+                videoFileWriter.FrameRate = actualFrameRate; /* settings.VideoFrameRate; */
+                videoFileWriter.Width = Settings.VideoWidth;
+                videoFileWriter.Height = Settings.VideoHeight;
+                videoFileWriter.VideoCodec = videoCodec;
+                
+                // advanced settings
+                //videoFileWriter.VideoOptions["crf"] = "18"; // visually lossless
+                //videoFileWriter.VideoOptions["preset"] = "veryfast";
+                //videoFileWriter.VideoOptions["tune"] = "zerolatency";
+
                 if (audioDevice != null)
                 {
-                    videoFileWriter.Open(outputFile,
-                        Settings.VideoWidth,
-                        Settings.VideoHeight,
-                        actualFrameRate, /* settings.VideoFrameRate, */
-                        videoCodec,
-                        settings.VideoBitRate,
-                        AudioCodec.MP3,
-                        settings.AudioBitRate,
-                        audioDevice.SampleRate,
-                        audioDevice.Channels /* only Mono? */
-                        );
+                    videoFileWriter.AudioBitRate = settings.AudioBitRate; // 160 kbps
+                    videoFileWriter.AudioCodec = AudioCodec.Aac;
+                    videoFileWriter.AudioLayout = AudioLayout.Mono; // (settings.AudioChannel == Settings.AudioMode.Mono) ? AudioLayout.Mono : AudioLayout.Stereo; // Accord only supports Mono
+                    videoFileWriter.FrameSize = settings.AudioFrameSize; // 40 kb
+                    videoFileWriter.SampleRate = settings.AudioSampleRate; // 44100 Hz
+
                     Log.WriteLine("RECORD HAS AUDIO");
                 }
-                else
-                {
-                    videoFileWriter.Open(outputFile,
-                        Settings.VideoWidth,
-                        Settings.VideoHeight,
-                        actualFrameRate, /* settings.VideoFrameRate, */
-                        videoCodec,
-                        settings.VideoBitRate
-                        );
-                }
+
+                // open file to write
+                videoFileWriter.Open(outputFile);
 
                 timerRecord.Start();
                 videoRecordState = VideoRecordState.RECORDING;
@@ -654,6 +657,8 @@ namespace VACamera
         {
             if (videoRecordState == VideoRecordState.RECORDING)
             {
+                videoRecordState = VideoRecordState.PAUSE;
+
                 lock (syncRender)
                 {
                     if (videoFileWriter.IsOpen)
@@ -664,7 +669,6 @@ namespace VACamera
                 }
 
                 timerRecord.Stop();
-                videoRecordState = VideoRecordState.PAUSE;
                 Log.WriteLine(">>> PAUSE recording");
             }
         }
@@ -674,11 +678,13 @@ namespace VACamera
             if (videoRecordState == VideoRecordState.RECORDING
                 || videoRecordState == VideoRecordState.PAUSE)
             {
+                videoRecordState = VideoRecordState.IDLE;
+
                 lock (syncRender)
                 {
                     if (videoFileWriter.IsOpen)
                     {
-                        videoFileWriter.Flush();                        
+                        videoFileWriter.Flush();
                         videoFileWriter.Close();
                         videoFileWriter.Dispose();
                         videoFileWriter = null;
@@ -686,7 +692,6 @@ namespace VACamera
                 }
 
                 timerRecord.Stop();
-                videoRecordState = VideoRecordState.IDLE;
                 Log.WriteLine(">>> STOP recording");
             }
         }

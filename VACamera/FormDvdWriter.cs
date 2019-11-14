@@ -203,7 +203,7 @@ namespace VACamera
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine(ex.ToString());
+                        Log.WriteLine(ex.ToString());
                     }
 
                     try
@@ -212,7 +212,7 @@ namespace VACamera
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine(ex.ToString());
+                        Log.WriteLine(ex.ToString());
                     }
 
                     Close();
@@ -825,7 +825,7 @@ namespace VACamera
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.ToString());
+                Log.WriteLine(ex.ToString());
                 return false;
             }
 
@@ -890,7 +890,7 @@ namespace VACamera
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.ToString());
+                Log.WriteLine(ex.ToString());
                 return false;
             }
 
@@ -937,7 +937,7 @@ namespace VACamera
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(ex.ToString());
+                    Log.WriteLine(ex.ToString());
                 }
 
                 // show new session
@@ -1022,7 +1022,7 @@ namespace VACamera
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.ToString());
+                Log.WriteLine(ex.ToString());
                 return false;
             }
             return true;

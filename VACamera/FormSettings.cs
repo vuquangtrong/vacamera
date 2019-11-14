@@ -1,5 +1,7 @@
-﻿using Accord.Video.DirectShow;
+﻿using Accord.DirectSound;
+using Accord.Video.DirectShow;
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -9,7 +11,7 @@ namespace VACamera
     {
         public Settings Settings;
         private FilterInfoCollection videoDevices;
-        private FilterInfoCollection audioDevices;
+        private List<AudioDeviceInfo> audioDevices = null;
         private bool isChanged = false;
 
         public FormSettings()
@@ -20,20 +22,18 @@ namespace VACamera
 
         private void FormSettings_Load(object sender, EventArgs e)
         {
-            // audio devices
             try
             {
-                audioDevices = new FilterInfoCollection(FilterCategory.AudioInputDevice);
+                audioDevices = new List<AudioDeviceInfo>(new AudioDeviceCollection(AudioDeviceCategory.Capture));
                 if (audioDevices != null && audioDevices.Count > 0)
                 {
                     int index = 0;
-                    foreach (FilterInfo audioDevice in audioDevices)
+                    foreach (AudioDeviceInfo device in audioDevices)
                     {
-                        listAudioSource.Items.Add(audioDevice.Name);
-                        if (Settings.AudioInputPath.Equals(audioDevice.MonikerString))
+                        listAudioSource.Items.Add(device.Description + "|" + device.Guid.ToString());
+                        if (Settings.AudioInputPath.Equals(device.Description + "|" + device.Guid.ToString()))
                         {
                             listAudioSource.SelectedIndex = index;
-                            Settings.SetAudioInputPath(audioDevice.MonikerString);
                         }
                         index++;
                     }
@@ -51,7 +51,7 @@ namespace VACamera
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.StackTrace);
+                Log.WriteLine(ex.ToString());
             }
 
             // audio channel
@@ -118,7 +118,7 @@ namespace VACamera
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.StackTrace);
+                Log.WriteLine(ex.ToString());
             }
 
             // video mixing mode
@@ -134,10 +134,10 @@ namespace VACamera
             listVideoFormat.SelectedIndex = (int)Settings.VideoOutputFormat;
 
             // video bitrate
-            listBitRate.Items.Add(Settings.BitRate.ToString());
+            listBitRate.Items.Add(Settings.VideoBitRate.ToString());
 
             // video framerate
-            listFrameRate.Text = Settings.FrameRate.ToString();
+            listFrameRate.Text = Settings.VideoFrameRate.ToString();
 
             // update UI
             ToggleVideoSettings();
@@ -148,14 +148,14 @@ namespace VACamera
 
         private void listAudioSource_SelectedIndexChanged(object sender, EventArgs e)
         {
-            Console.WriteLine("listAudioSource = " + listAudioSource.Text);
+            Log.WriteLine("listAudioSource = " + listAudioSource.Text);
             Settings.SetAudioInputPath(listAudioSource.Text);
             isChanged = true;
         }
 
         private void listAudioChannel_SelectedIndexChanged(object sender, EventArgs e)
         {
-            Console.WriteLine("listAudioChannel = " + GetAudioMode(listAudioChannel.SelectedIndex));
+            Log.WriteLine("listAudioChannel = " + GetAudioMode(listAudioChannel.SelectedIndex));
             Settings.SetAudioChannel(GetAudioMode(listAudioChannel.SelectedIndex));
             isChanged = true;
         }
@@ -164,7 +164,7 @@ namespace VACamera
         {
             if (videoDevices.Count >= 2)
             {
-                Console.WriteLine("listVideoMixingMode = " + GetVideoMode(listVideoMixingMode.SelectedIndex));
+                Log.WriteLine("listVideoMixingMode = " + GetVideoMode(listVideoMixingMode.SelectedIndex));
                 Settings.SetVideoMixingMode(GetVideoMode(listVideoMixingMode.SelectedIndex));
                 
             } else
@@ -177,36 +177,36 @@ namespace VACamera
 
         private void listCamera1_SelectedIndexChanged(object sender, EventArgs e)
         {
-            Console.WriteLine("listCamera1 = " + listCamera1.Text);
+            Log.WriteLine("listCamera1 = " + listCamera1.Text);
             Settings.SetCamera1_InputPath(videoDevices[listCamera1.SelectedIndex].MonikerString);
             isChanged = true;
         }
 
         private void listCamera2_SelectedIndexChanged(object sender, EventArgs e)
         {
-            Console.WriteLine("listCamera2 = " + listCamera2.Text);
+            Log.WriteLine("listCamera2 = " + listCamera2.Text);
             Settings.SetCamera2_InputPath(videoDevices[listCamera2.SelectedIndex].MonikerString);
             isChanged = true;
         }
 
         private void listVideoFormat_SelectedIndexChanged(object sender, EventArgs e)
         {
-            Console.WriteLine("listVideoFormat = " + listVideoFormat.Text);
+            Log.WriteLine("listVideoFormat = " + listVideoFormat.Text);
             Settings.SetVideoOutputFormat(listVideoFormat.Text);
             isChanged = true;
         }
 
         private void listBitRate_SelectedIndexChanged(object sender, EventArgs e)
         {
-            Console.WriteLine("listBitRate = " + listBitRate.Text);
-            Settings.SetBitRate(listBitRate.Text);
+            Log.WriteLine("listBitRate = " + listBitRate.Text);
+            Settings.SetVideoBitRate(listBitRate.Text);
             isChanged = true;
         }
 
         private void listFrameRate_SelectedIndexChanged(object sender, EventArgs e)
         {
-            Console.WriteLine("listFrameRate = " + listFrameRate.Text);
-            Settings.SetFrameRate(listFrameRate.Text);
+            Log.WriteLine("listFrameRate = " + listFrameRate.Text);
+            Settings.SetVideoFrameRate(listFrameRate.Text);
             isChanged = true;
         }
 
@@ -234,9 +234,9 @@ namespace VACamera
             switch (index)
             {
                 case 0:
-                    return "Stereo";
-                case 1:
                     return "Mono";
+                case 1:
+                    return "Stereo";
                 default:
                     return "Stereo";
             }

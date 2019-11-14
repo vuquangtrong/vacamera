@@ -80,8 +80,8 @@
             this.listAudioChannel.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.listAudioChannel.FormattingEnabled = true;
             this.listAudioChannel.Items.AddRange(new object[] {
-            "Stereo",
-            "Mono"});
+            "Mono",
+            "Stereo"});
             this.listAudioChannel.Location = new System.Drawing.Point(149, 49);
             this.listAudioChannel.Name = "listAudioChannel";
             this.listAudioChannel.Size = new System.Drawing.Size(335, 29);

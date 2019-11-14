@@ -29,7 +29,7 @@ namespace VACamera
         public string ReadValue(string Section, string Key)
         {
             StringBuilder temp = new StringBuilder(255);
-            _ = GetPrivateProfileString(Section, Key, "", temp, 255, this.Path);
+            GetPrivateProfileString(Section, Key, "", temp, 255, this.Path);
             return temp.ToString();
         }
     }

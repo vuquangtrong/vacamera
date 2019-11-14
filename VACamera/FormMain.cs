@@ -1,6 +1,9 @@
-﻿using Accord.Video.DirectShow;
+﻿using Accord.Audio;
+using Accord.DirectSound;
+using Accord.Video.DirectShow;
 using Accord.Video.FFMPEG;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -20,7 +23,6 @@ namespace VACamera
         Settings settings = new Settings();
 
         FilterInfoCollection videoDevices;
-        VideoCaptureDeviceForm videoCaptureDeviceForm = null;
 
         VideoCaptureDevice videoDevice1 = null;
         Bitmap frame1 = null;
@@ -32,9 +34,8 @@ namespace VACamera
         static readonly Object syncFrame2 = new Object();
         bool isFrame2_Rendering = false;
 
-        //FilterInfoCollection audioDevices;
-        //AudioDeviceInfo audioDeviceInfo;
-        //AudioCaptureDevice audioDevice;
+        List<AudioDeviceInfo> audioDevices = null;
+        AudioCaptureDevice audioDevice = null;
 
         Bitmap videoFrame = null;
         Graphics graphics = null;
@@ -46,15 +47,15 @@ namespace VACamera
         Rectangle textPosition4 = new Rectangle(10, 130, 200, 40);
         Rectangle textPosition5 = new Rectangle(10, 170, 200, 40);
 
-        private Stopwatch stopWatchFPS = null;
+        Stopwatch stopWatchFPS = null;
 
-        enum VideoFileState
+        enum VideoRecordState
         {
             IDLE,
             RECORDING,
             PAUSE
         }
-        VideoFileState videoFileState = VideoFileState.IDLE;
+        VideoRecordState videoRecordState = VideoRecordState.IDLE;
         VideoFileWriter videoFileWriter = new VideoFileWriter();
         static readonly Object syncRender = new Object();
 
@@ -76,16 +77,14 @@ namespace VACamera
             {
                 Directory.CreateDirectory(outputFolder);
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Console.WriteLine(e.ToString());
+                Log.WriteLine(ex.ToString());
             }
         }
 
         private void FormMain_Load(object sender, EventArgs e)
         {
-
-
             // disable buttons for new session
             btnRecord.Enabled = false;
             btnPause.Enabled = false;
@@ -100,9 +99,8 @@ namespace VACamera
                 {
                     sessionInfo = formNewSession.SessionInfo;
 
-                    // debug
-                    Console.WriteLine(sessionInfo.ToString());
-                    Console.WriteLine(settings.ToString());
+                    Log.WriteLine(sessionInfo.ToString());
+                    Log.WriteLine(settings.ToString());
                 }
                 else
                 {
@@ -113,28 +111,32 @@ namespace VACamera
 
         private void FormMain_Shown(object sender, EventArgs e)
         {
-            videoCaptureDeviceForm = new VideoCaptureDeviceForm();
-
+            // init render buffer
             videoFrame = new Bitmap(Settings.VideoWidth, Settings.VideoHeight, PixelFormat.Format24bppRgb);
             graphics = Graphics.FromImage(videoFrame);
             graphics.CompositingMode = CompositingMode.SourceOver;
+            graphics.CompositingQuality = CompositingQuality.HighSpeed;
+            graphics.SmoothingMode = SmoothingMode.HighSpeed;
 
+            // init render thread
             //videoRender = new Thread(VideoRenderWorker);
             //videoRender.Start();
 
+            // start devices at startup
             InitDevices();
 
-            timer1.Start();
+            // debug runtime
+            //timer1.Start();
         }
 
         private void FormMain_FormClosing(object sender, FormClosingEventArgs e)
         {
             StopRecording();
             StopDevices();
-            StopVideoFileWriter();
             //StopRender();
 
-            timer1.Stop();
+            // debug runtime
+            //timer1.Stop();
         }
 
         //private void VideoRenderWorker()
@@ -152,7 +154,232 @@ namespace VACamera
         //    }
         //}
 
+        private void InitDevices()
+        {
+            // stop running devices
+            try
+            {
+                StopDevices();
+            }
+            catch (Exception ex)
+            {
+                Log.WriteLine(ex.ToString());
+            }
+
+            // start audio device
+            try
+            {
+                audioDevices = new List<AudioDeviceInfo>(new AudioDeviceCollection(AudioDeviceCategory.Capture));
+                if (audioDevices != null && audioDevices.Count > 0)
+                {
+                    AudioDeviceInfo audioDeviceInfo = null;
+
+                    // find last used device
+                    foreach (AudioDeviceInfo device in audioDevices)
+                    {
+                        if (settings.AudioInputPath.Equals(device.Description + "|" + device.Guid.ToString()))
+                        {
+                            audioDeviceInfo = device;
+                        }
+                    }
+
+                    // if nothing matched, use default device
+                    if (audioDeviceInfo == null)
+                    {
+                        audioDeviceInfo = audioDevices[0];
+                    }
+
+                    // setup audio device
+                    audioDevice = new AudioCaptureDevice(audioDeviceInfo)
+                    {
+                        Format = SampleFormat.Format32Bit,
+                        SampleRate = settings.AudioSampleRate, // 44100 Hz
+                        DesiredFrameSize = settings.AudioFrameSize // 40 Kb
+                    };
+                    Log.WriteLine("audioDevice.Format = " + audioDevice.Format.ToString());
+                    Log.WriteLine("audioDevice.SampleRate = " + audioDevice.SampleRate);
+                    Log.WriteLine("audioDevice.DesiredFrameSize = " + audioDevice.DesiredFrameSize);
+                    Log.WriteLine("audioDevice.Channels = " + audioDevice.Channels);
+                    audioDevice.NewFrame += AudioDevice_NewFrame;
+                    audioDevice.Start();
+                    Log.WriteLine(">>> START audioDevice: " + audioDeviceInfo.Description + "|" + audioDeviceInfo.Guid.ToString());
+                }
+                else
+                {
+                    MessageBox.Show("Không tìm thấy thiết bị thu âm thanh!");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.WriteLine(ex.ToString());
+            }
+
+            // start video devices
+            string device1_MonikerString = "";
+            string device2_MonikerString = "";
+            try
+            {
+                videoDevices = new FilterInfoCollection(FilterCategory.VideoInputDevice);
+                if (videoDevices != null && videoDevices.Count > 0)
+                {
+                    // find last used devices
+                    foreach (FilterInfo device in videoDevices)
+                    {
+                        if (settings.Camera1_InputPath.Equals(device.MonikerString))
+                        {
+                            device1_MonikerString = device.MonikerString;
+                        }
+
+                        if (settings.Camera2_InputPath.Equals(device.MonikerString))
+                        {
+                            device2_MonikerString = device.MonikerString;
+                        }
+                    }
+
+                    // not matched, use default device
+                    if (device1_MonikerString.Equals(""))
+                    {
+                        device1_MonikerString = videoDevices[0].MonikerString;
+                    }
+                    videoDevice1 = new VideoCaptureDevice(device1_MonikerString);
+                    videoDevice1.DesiredAverageTimePerFrame = 330000; // ns
+                    videoDevice1.NewFrame += VideoDevice1_NewFrame;
+                    videoDevice1.Start();
+                    Log.WriteLine(">>> START videoDevice1: " + device1_MonikerString);
+
+                    // open second device if needed
+                    if (videoDevices.Count > 1)
+                    {
+                        if (device2_MonikerString.Equals(""))
+                        {
+                            device2_MonikerString = videoDevices[1].MonikerString;
+                        }
+                    }
+                    else
+                    {
+                        // fallback to Single mode
+                        settings.SetVideoMixingMode(Settings.VideoMode.Single);
+                    }
+
+                    if (settings.VideoMixingMode != Settings.VideoMode.Single)
+                    {
+                        videoDevice2 = new VideoCaptureDevice(device2_MonikerString);
+                        videoDevice2.DesiredAverageTimePerFrame = 330000; // ns
+                        videoDevice2.NewFrame += VideoDevice2_NewFrame;
+                        videoDevice2.Start();
+                        Log.WriteLine(">>> START videoDevice2: " + device2_MonikerString);
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("Không tìm thấy thiết bị thu hình ảnh!");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.WriteLine(ex.ToString());
+            }
+
+            // change buttons state
+            if (videoDevice1 != null)
+            {
+                btnRecord.Enabled = true;
+                btnPause.Enabled = false;
+                btnStop.Enabled = false;
+                btnReplay.Enabled = false;
+                btnWriteDisk.Enabled = false;
+
+                // reset record time
+                UpdateRecordTime(0);
+            }
+
+            // TODO: if framerate input is 30fps, need to set drop frame ratio
+            //if (settings.VideoFrameRate == 24)
+            //{
+            //    frameSkipAt = 5;
+            //    frameCount = 0;
+            //}
+            //else if (settings.VideoFrameRate == 15)
+            //{
+            //    frameSkipAt = 2;
+            //    frameCount = 0;
+            //}
+            //else
+            //{
+            //    frameSkipAt = 0;
+            //    frameCount = 0;
+            //}
+
+            // monitor actual framerate
+            stopWatchFPS = null;
+            timerFPS.Start();
+
+            Log.WriteLine(settings.ToString());
+        }
+
+        private void StopDevices()
+        {
+            try
+            {
+                if (audioDevice != null)
+                {
+                    audioDevice.NewFrame -= AudioDevice_NewFrame;
+
+                    audioDevice.SignalToStop();
+                    audioDevice.WaitForStop();
+                    Thread.Sleep(1000);
+
+                    audioDevice.Dispose();
+                    audioDevice = null;
+                    Log.WriteLine(">>> STOP audioDevice");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.WriteLine(ex.ToString());
+            }
+
+            try
+            {
+                if (videoDevice1 != null)
+                {
+                    videoDevice1.NewFrame -= VideoDevice1_NewFrame;
+                    videoDevice1.SignalToStop();
+                    videoDevice1.WaitForStop();
+                    Thread.Sleep(1000);
+
+                    videoDevice1 = null;
+                    Log.WriteLine(">>> STOP videoDevice1");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.WriteLine(ex.ToString());
+            }
+
+            try
+            {
+                if (videoDevice2 != null)
+                {
+                    videoDevice2.NewFrame -= VideoDevice2_NewFrame;
+                    videoDevice2.SignalToStop();
+                    videoDevice2.WaitForStop();
+                    Thread.Sleep(1000);
+
+                    videoDevice2 = null;
+                    Log.WriteLine(">>> STOP videoDevice2");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.WriteLine(ex.ToString());
+            }
+
+            timerFPS.Stop();
+        }
+
         delegate void UpdateLiveImageInvokerCallBack(PictureBox pictureBox, Bitmap bitmap);
+
         private void UpdateLiveImageInvoker(PictureBox pictureBox, Bitmap bitmap)
         {
             if (InvokeRequired)
@@ -175,6 +402,24 @@ namespace VACamera
             pictureBox.Image = bitmap;
         }
 
+        private void AudioDevice_NewFrame(object sender, NewFrameEventArgs e)
+        {
+            lock (syncRender)
+            {
+                try
+                {
+                    if (videoRecordState == VideoRecordState.RECORDING)
+                    {
+                        videoFileWriter.WriteAudioFrame(e.Signal.RawData);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.WriteLine(ex.ToString());
+                }
+            }
+        }
+
         private void VideoDevice1_NewFrame(object sender, Accord.Video.NewFrameEventArgs eventArgs)
         {
             bool freeToGo = false;
@@ -184,12 +429,19 @@ namespace VACamera
             }
             if (freeToGo)
             {
-                if (frame1 != null)
+                lock (syncFrame1)
                 {
-                    frame1.Dispose();
+                    if (frame1 != null)
+                    {
+                        frame1.Dispose();
+                    }
+                    frame1 = (Bitmap)eventArgs.Frame.Clone();
+                    RenderFrame();
                 }
-                frame1 = (Bitmap)eventArgs.Frame.Clone();
-                RenderFrame();
+            }
+            else
+            {
+                //Log.WriteLine("skip frame 1");
             }
         }
 
@@ -202,7 +454,7 @@ namespace VACamera
             }
             if (freeToGo)
             {
-                if (!isFrame2_Rendering)
+                lock (syncFrame2)
                 {
                     if (frame2 != null)
                     {
@@ -211,10 +463,15 @@ namespace VACamera
                     frame2 = (Bitmap)eventArgs.Frame.Clone();
                 }
             }
+            else
+            {
+                //Log.WriteLine("skip frame 2");
+            }
         }
 
         private void RenderFrame()
         {
+            // drop frame if needed
             if (frameSkipAt > 0)
             {
                 frameCount++;
@@ -225,6 +482,7 @@ namespace VACamera
                 }
             }
 
+            // render frame 1
             lock (syncFrame1)
             {
                 isFrame1_Rendering = true;
@@ -234,17 +492,28 @@ namespace VACamera
             {
                 try
                 {
-                    using (Bitmap frame1_Clone = (Bitmap)frame1.Clone())
+
+                    Bitmap frame1_Clone = null;
+                    lock (syncFrame1)
                     {
-                        graphics.DrawImage(frame1_Clone,
-                            new Rectangle(settings.Frame1_X, settings.Frame1_Y, settings.Frame1_Width, settings.Frame1_Height),
-                            new Rectangle(0, 0, frame1.Width, frame1.Height),
-                            GraphicsUnit.Pixel);
+                        frame1_Clone = (Bitmap)frame1.Clone();
+                    }
+                    graphics.DrawImage(frame1_Clone,
+                        new Rectangle(settings.Frame1_X, settings.Frame1_Y, settings.Frame1_Width, settings.Frame1_Height),
+                        new Rectangle(0, 0, frame1.Width, frame1.Height),
+                        GraphicsUnit.Pixel);
+                    if (frame1_Clone != null)
+                    {
+                        frame1_Clone.Dispose();
                     }
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    //Console.WriteLine(e.ToString());
+                    Log.WriteLine(ex.ToString());
+                    lock (syncFrame1)
+                    {
+                        isFrame1_Rendering = false;
+                    }
                     return;
                 }
             }
@@ -254,27 +523,39 @@ namespace VACamera
                 isFrame1_Rendering = false;
             }
 
+            // render frame 2
             if (settings.VideoMixingMode != Settings.VideoMode.Single)
             {
                 lock (syncFrame2)
                 {
                     isFrame2_Rendering = true;
                 }
+
                 if (frame2 != null)
                 {
                     try
                     {
-                        using (Bitmap frame2_Clone = (Bitmap)frame2.Clone())
+                        Bitmap frame2_Clone = null;
+                        lock (syncFrame1)
                         {
-                            graphics.DrawImage(frame2_Clone,
+                            frame2_Clone = (Bitmap)frame2.Clone();
+                        }
+                        graphics.DrawImage(frame2_Clone,
                             new Rectangle(settings.Frame2_X, settings.Frame2_Y, settings.Frame2_Width, settings.Frame2_Height),
                             new Rectangle(0, 0, frame2.Width, frame2.Height),
                             GraphicsUnit.Pixel);
+                        if (frame2_Clone != null)
+                        {
+                            frame2_Clone.Dispose();
                         }
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
-                        //Console.WriteLine(e.ToString());
+                        Log.WriteLine(ex.ToString());
+                        lock (syncFrame2)
+                        {
+                            isFrame2_Rendering = false;
+                        }
                         return;
                     }
                 }
@@ -296,7 +577,7 @@ namespace VACamera
             UpdateLiveImage(pictureFrame, (Bitmap)videoFrame.Clone());
 
             // write file
-            if (videoFileState == VideoFileState.RECORDING)
+            if (videoRecordState == VideoRecordState.RECORDING)
             {
                 lock (syncRender)
                 {
@@ -307,29 +588,17 @@ namespace VACamera
                             videoFileWriter.WriteVideoFrame(videoFrame_Clone);
                         }
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
-                        //Console.WriteLine(e.ToString());
-                        return;
+                        Log.WriteLine(ex.ToString());
                     }
                 }
             }
         }
 
-        //private void AudioDevice_NewFrame(object sender, NewFrameEventArgs e)
-        //{
-        //    //lock (syncRender)
-        //    //{
-        //    if (videoFileState == VideoFileState.RECORDING)
-        //    {
-        //        videoFileWriter.WriteAudioFrame(e.Signal.RawData);
-        //    }
-        //    //}
-        //}
-
         private void StartRecording()
         {
-            if (videoFileState == VideoFileState.IDLE)
+            if (videoRecordState == VideoRecordState.IDLE)
             {
                 VideoCodec videoCodec = VideoCodec.MPEG4;
                 string videoExtension = ".mp4";
@@ -340,106 +609,85 @@ namespace VACamera
                     videoExtension = ".mpg";
                 }
 
-                //if (audioDevice != null)
-                //{
-                //    //public void Open(string fileName, 
-                //    //    int width, int height, Rational frameRate, VideoCodec codec, int bitRate, 
-                //    //    AudioCodec audioCodec, int audioBitrate, int sampleRate, int channels);
-                //    videoFileWriter.Open(System.Environment.CurrentDirectory + "\\" + sessionInfo.DateTime + "." + settings.GetVideoOutputFormat().ToString(),
-                //        Settings.VideoWidth, Settings.VideoHeight, 30, VideoCodec.MPEG4, settings.BitRate,
-                //        AudioCodec.MP3, 320 * 1000, audioDevice.SampleRate, (int)settings.GetAudioChannel());
-                //    Console.WriteLine("HAS AUDIO");
-                //}
-                //else
-                //{
                 outputFile = outputFolder + "\\" + sessionInfo.DateTime + videoExtension;
-                videoFileWriter.Open(
-                   outputFile,
-                   Settings.VideoWidth,
-                   Settings.VideoHeight,
-                   /* settings.FrameRate, */
-                   actualFrameRate,
-                   videoCodec,
-                   settings.BitRate);
-                //}
 
-                Console.WriteLine(">>> START recording");
+                if (audioDevice != null)
+                {
+                    videoFileWriter.Open(outputFile,
+                        Settings.VideoWidth,
+                        Settings.VideoHeight,
+                        actualFrameRate, /* settings.VideoFrameRate, */
+                        videoCodec,
+                        settings.VideoBitRate,
+                        AudioCodec.MP3,
+                        settings.AudioBitRate,
+                        audioDevice.SampleRate,
+                        audioDevice.Channels /* only Mono? */
+                        );
+                    Log.WriteLine("RECORD HAS AUDIO");
+                }
+                else
+                {
+                    videoFileWriter.Open(outputFile,
+                        Settings.VideoWidth,
+                        Settings.VideoHeight,
+                        actualFrameRate, /* settings.VideoFrameRate, */
+                        videoCodec,
+                        settings.VideoBitRate
+                        );
+                }
+
+                timerRecord.Start();
+                videoRecordState = VideoRecordState.RECORDING;
+                Log.WriteLine(">>> START recording");
+
             }
-
-            timerRecord.Start();
-            videoFileState = VideoFileState.RECORDING;
+            else if (videoRecordState == VideoRecordState.PAUSE)
+            {
+                timerRecord.Start();
+                videoRecordState = VideoRecordState.RECORDING;
+                Log.WriteLine(">>> RESUME recording");
+            }
         }
 
         private void PauseRecording()
         {
-            lock (syncRender)
+            if (videoRecordState == VideoRecordState.RECORDING)
             {
-                if (videoFileWriter.IsOpen)
+                lock (syncRender)
                 {
-                    videoFileWriter.Flush();
-                    Console.WriteLine(">>> PAUSE recording");
-                }
-            }
+                    if (videoFileWriter.IsOpen)
+                    {
+                        videoFileWriter.Flush();
 
-            timerRecord.Stop();
-            videoFileState = VideoFileState.PAUSE;
+                    }
+                }
+
+                timerRecord.Stop();
+                videoRecordState = VideoRecordState.PAUSE;
+                Log.WriteLine(">>> PAUSE recording");
+            }
         }
 
         private void StopRecording()
         {
-            lock (syncRender)
+            if (videoRecordState == VideoRecordState.RECORDING
+                || videoRecordState == VideoRecordState.PAUSE)
             {
-                if (videoFileWriter.IsOpen)
+                lock (syncRender)
                 {
-                    videoFileWriter.Flush();
-                    videoFileWriter.Close();
-                    Console.WriteLine(">>> STOP recording");
+                    if (videoFileWriter.IsOpen)
+                    {
+                        videoFileWriter.Flush();                        
+                        videoFileWriter.Close();
+                        videoFileWriter.Dispose();
+                        videoFileWriter = null;
+                    }
                 }
-            }
 
-            timerRecord.Stop();
-            videoFileState = VideoFileState.IDLE;
-        }
-
-        private void StopDevices()
-        {
-            if (videoDevice1 != null)
-            {
-                videoDevice1.SignalToStop();
-                videoDevice1.WaitForStop();
-                videoDevice1.NewFrame -= VideoDevice1_NewFrame;
-
-                Console.WriteLine(">>> STOP videoDevice1");
-            }
-
-            if (videoDevice2 != null)
-            {
-                videoDevice2.SignalToStop();
-                videoDevice2.WaitForStop();
-                videoDevice2.NewFrame -= VideoDevice2_NewFrame;
-
-                Console.WriteLine(">>> STOP videoDevice2");
-            }
-
-            //if (audioDevice != null)
-            //{
-            //    audioDevice.SignalToStop();
-            //    audioDevice.NewFrame -= AudioDevice_NewFrame;
-            //    audioDevice.Dispose();
-            //}
-
-            timerFPS.Stop();
-        }
-
-        private void StopVideoFileWriter()
-        {
-            if (videoFileWriter != null)
-            {
-                if (videoFileWriter.IsOpen)
-                {
-                    videoFileWriter.Close();
-                }
-                videoFileWriter.Dispose();
+                timerRecord.Stop();
+                videoRecordState = VideoRecordState.IDLE;
+                Log.WriteLine(">>> STOP recording");
             }
         }
 
@@ -453,157 +701,6 @@ namespace VACamera
         //        }
         //    }
         //}
-
-        private void InitDevices()
-        {
-            StopDevices();
-
-            // audio device
-            //try
-            //{
-            //    audioDevices = new FilterInfoCollection(FilterCategory.AudioInputDevice);
-            //    if (audioDevices != null && audioDevices.Count > 0)
-            //    {
-            //        string deviceMonikerString = "";
-
-            //        foreach (FilterInfo device in audioDevices)
-            //        {
-
-            //            if (settings.AudioInputPath.Equals(device.Name))
-            //            {
-            //                deviceMonikerString = device.MonikerString;
-            //            }
-            //        }
-
-            //        if (deviceMonikerString.Equals(""))
-            //        {
-            //            deviceMonikerString = audioDevices[0].MonikerString;
-            //        }
-
-            //        // open
-            //        Console.WriteLine("::: AudioDevice = " + deviceMonikerString);
-            //        //audioDevice = new AudioCaptureDevice(audioDeviceInfo.Guid);
-            //        //audioDevice.Format = SampleFormat.Format16Bit;
-            //        //audioDevice.DesiredFrameSize = 4096;
-            //        //audioDevice.NewFrame += AudioDevice_NewFrame; ;
-            //        //audioDevice.Start();
-            //    }
-            //}
-            //catch (Exception ex)
-            //{
-            //    Console.WriteLine(ex.StackTrace);
-            //}
-
-            // audio channels
-            //if (audioDevice != null)
-            //{
-            //    if (settings.GetAudioChannel() == Settings.AudioMode.Mono)
-            //    {
-            //        audioDevice.Channels = 1;
-            //    }
-            //    else if (settings.GetAudioChannel() == Settings.AudioMode.Stereo)
-            //    {
-            //        audioDevice.Channels = 2;
-            //    }
-            //    else
-            //    {
-            //        audioDevice.Channels = 2;
-            //    }
-            //}
-
-            // video devices
-            string device1_MonikerString = "";
-            string device2_MonikerString = "";
-            try
-            {
-                videoDevices = new FilterInfoCollection(FilterCategory.VideoInputDevice);
-                if (videoDevices != null && videoDevices.Count > 0)
-                {
-                    foreach (FilterInfo device in videoDevices)
-                    {
-                        if (settings.Camera1_InputPath.Equals(device.MonikerString))
-                        {
-                            device1_MonikerString = device.MonikerString;
-                        }
-
-                        if (settings.Camera2_InputPath.Equals(device.MonikerString))
-                        {
-                            device2_MonikerString = device.MonikerString;
-                        }
-                    }
-
-                    if (device1_MonikerString.Equals(""))
-                    {
-                        device1_MonikerString = videoDevices[0].MonikerString;
-                    }
-                    Console.WriteLine("::: VideoDevice1 = " + device1_MonikerString);
-                    videoDevice1 = new VideoCaptureDevice(device1_MonikerString);
-                    videoDevice1.DesiredAverageTimePerFrame = 330000; // ns
-                    videoDevice1.NewFrame += VideoDevice1_NewFrame;
-                    videoDevice1.Start();
-
-                    if (videoDevices.Count >= 2)
-                    {
-                        if (device2_MonikerString.Equals(""))
-                        {
-                            device2_MonikerString = videoDevices[1].MonikerString;
-                        }
-                    }
-                    else
-                    {
-                        // fallback to Single mode
-                        settings.SetVideoMixingMode(Settings.VideoMode.Single);
-                    }
-
-                    if (settings.VideoMixingMode != Settings.VideoMode.Single)
-                    {
-                        Console.WriteLine("::: VideoDevice2 = " + device2_MonikerString);
-                        videoDevice2 = new VideoCaptureDevice(device2_MonikerString);
-                        videoDevice2.DesiredAverageTimePerFrame = 330000; // ns
-                        videoDevice2.NewFrame += VideoDevice2_NewFrame;
-                        videoDevice2.Start();
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.StackTrace);
-            }
-
-            if (videoDevice1 != null)
-            {
-                // set buttons state
-                btnRecord.Enabled = true;
-                btnPause.Enabled = false;
-                btnStop.Enabled = false;
-                btnReplay.Enabled = false;
-                btnWriteDisk.Enabled = false;
-
-                // reset record time
-                UpdateRecordTime(0);
-            }
-
-            if (settings.FrameRate == 24)
-            {
-                frameSkipAt = 5;
-                frameCount = 0;
-            }
-            else if (settings.FrameRate == 15)
-            {
-                frameSkipAt = 2;
-                frameCount = 0;
-            }
-            else
-            {
-                frameSkipAt = 0;
-                frameCount = 0;
-            }
-
-            stopWatchFPS = null;
-            timerFPS.Start();
-
-            Console.WriteLine(settings.ToString());
-        }
 
         private void exitToolStripMenuItem_Click(object sender, EventArgs e)
         {
@@ -624,8 +721,8 @@ namespace VACamera
                     sessionInfo = formNewSession.SessionInfo;
 
                     // debug
-                    Console.WriteLine(sessionInfo.ToString());
-                    Console.WriteLine(settings.ToString());
+                    Log.WriteLine(sessionInfo.ToString());
+                    Log.WriteLine(settings.ToString());
                 }
             }
 
@@ -639,6 +736,7 @@ namespace VACamera
             }
 
             UpdateRecordTime(0);
+            InitDevices();
             Show();
         }
 
@@ -672,8 +770,8 @@ namespace VACamera
 
         private void btnRecord_Click(object sender, EventArgs e)
         {
-            if (videoFileState == VideoFileState.IDLE
-                || videoFileState == VideoFileState.PAUSE)
+            if (videoRecordState == VideoRecordState.IDLE
+                || videoRecordState == VideoRecordState.PAUSE)
             {
                 btnRecord.Enabled = false;
                 btnPause.Enabled = true;
@@ -689,26 +787,25 @@ namespace VACamera
 
         private void btnPause_Click(object sender, EventArgs e)
         {
-            if (videoFileState == VideoFileState.RECORDING)
+            if (videoRecordState == VideoRecordState.RECORDING)
             {
-                videoFileState = VideoFileState.PAUSE;
                 btnRecord.Enabled = true;
                 btnPause.Enabled = false;
                 btnStop.Enabled = true;
                 btnReplay.Enabled = false;
                 btnWriteDisk.Enabled = false;
+
                 PauseRecording();
             }
         }
 
         private void btnStop_Click(object sender, EventArgs e)
         {
-            if (videoFileState == VideoFileState.RECORDING
-                || videoFileState == VideoFileState.PAUSE)
+            if (videoRecordState == VideoRecordState.RECORDING
+                || videoRecordState == VideoRecordState.PAUSE)
             {
                 if (MessageBox.Show("Kết thúc ghi hình và ghi DVD?", "Xác nhận", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
                 {
-                    videoFileState = VideoFileState.IDLE;
                     btnRecord.Enabled = false; // must start new session
                     btnPause.Enabled = false;
                     btnStop.Enabled = false;
@@ -721,8 +818,6 @@ namespace VACamera
                     Thread.Sleep(1000);
 
                     StopDevices();
-                    Thread.Sleep(1000);
-
                     btnWriteDisk_Click(new object(), new EventArgs());
                 }
             }
@@ -735,8 +830,8 @@ namespace VACamera
 
         private void btnWriteDisk_Click(object sender, EventArgs e)
         {
-            Console.WriteLine(sessionInfo.ToString());
-            Console.WriteLine("outputFile = " + outputFile);
+            Log.WriteLine(sessionInfo.ToString());
+            Log.WriteLine("outputFile = " + outputFile);
             using (FormDvdWriter formDvdWriter = new FormDvdWriter(sessionInfo.DateTime, outputFile))
             {
                 DialogResult result = formDvdWriter.ShowDialog();
@@ -816,7 +911,7 @@ namespace VACamera
         {
             runtime++;
             TimeSpan timeRun = TimeSpan.FromSeconds(runtime);
-            Console.WriteLine(timeRun.ToString("hh':'mm':'ss"));
+            Log.WriteLine(timeRun.ToString("hh':'mm':'ss"));
         }
     }
 }

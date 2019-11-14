@@ -17,9 +17,9 @@ namespace VACamera
             {
                 Directory.CreateDirectory(logPath);
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Console.WriteLine(e.ToString());
+                WriteLine(ex.ToString());
             }
 
             // redirect console log to a file
@@ -32,10 +32,10 @@ namespace VACamera
                 Console.SetOut(streamWriter);
 #endif
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Console.WriteLine("Cannot redirect log to a file!!!");
-                Console.WriteLine(e.ToString());
+                WriteLine("Cannot redirect log to a file!!!");
+                WriteLine(ex.ToString());
             }
         }
 

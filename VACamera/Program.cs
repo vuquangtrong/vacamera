@@ -18,9 +18,9 @@ namespace VACamera
                 Application.SetCompatibleTextRenderingDefault(false);
                 Application.Run(new FormMain());
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Console.WriteLine(e.ToString());
+                Log.WriteLine(ex.ToString());
             }
             Log.Close();
         }

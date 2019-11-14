@@ -30,14 +30,19 @@ namespace VACamera
         }
 
         // attributes
-        public AudioMode AudioChannel { get; private set; }
-        public string AudioInputPath { get; private set; }
-        public VideoMode VideoMixingMode { get; private set; }
-        public string Camera1_InputPath { get; private set; }
-        public string Camera2_InputPath { get; private set; }
-        public VideoFormat VideoOutputFormat { get; private set; }
-        public int BitRate { get; private set; }
-        public int FrameRate { get; private set; }
+        public AudioMode AudioChannel { get; private set; } /* Stereo */
+        public int AudioBitRate { get; private set; } /* 160 kbps */
+        public int AudioSampleRate { get; private set; } /* 44100 Hz */
+        public int AudioFrameSize { get; private set; } /* 40 Kb*/
+        public string AudioInputPath { get; private set; } /* Default */
+        public VideoMode VideoMixingMode { get; private set; } /* Single */
+        public string Camera1_InputPath { get; private set; } /* Default */
+        public string Camera2_InputPath { get; private set; } /* Default */
+        public VideoFormat VideoOutputFormat { get; private set; } /* MPEG4 */
+        public int VideoBitRate { get; private set; } /* 3 Mbps */
+        public int VideoFrameRate { get; private set; } /* 30 */
+
+        // below attributs is automatically set after VideoMixingMode is changed
         public int Frame1_Width { get; private set; }
         public int Frame1_Height { get; private set; }
         public int Frame1_X { get; private set; }
@@ -59,8 +64,8 @@ namespace VACamera
         // methods
         public void SetAudioChannel(AudioMode mode)
         {
-            Console.WriteLine("AudioChannel = " + AudioChannel);
             AudioChannel = mode;
+            Log.WriteLine("AudioChannel = " + AudioChannel);
         }
 
         public void SetAudioChannel(string mode)
@@ -75,24 +80,106 @@ namespace VACamera
                 {
                     AudioChannel = (AudioMode)Enum.Parse(typeof(AudioMode), mode);
                 }
-                catch (Exception e)
+                catch (Exception ex)
                 {
                     AudioChannel = AudioMode.Stereo;
-                    Console.WriteLine(e.ToString());
+                    Log.WriteLine(ex.ToString());
                 }
             }
             SetAudioChannel(AudioChannel);
         }
 
+        public void SetAudioBitRate(int rate)
+        {
+            AudioBitRate = rate;
+            Log.WriteLine("AudioBitRate = " + AudioBitRate);
+        }
+
+        public void SetAudioBitRate(string rate)
+        {
+            if (rate == null || rate.Equals(""))
+            {
+                AudioBitRate = 160 * 1000;
+            }
+            else
+            {
+                try
+                {
+                    AudioBitRate = int.Parse(rate);
+                }
+                catch (Exception ex)
+                {
+                    AudioBitRate = 160 * 1000;
+                    Log.WriteLine(ex.ToString());
+                }
+            }
+            SetAudioBitRate(AudioBitRate);
+        }
+
+        public void SetAudioSampleRate(int rate)
+        {
+            AudioSampleRate = rate;
+            Log.WriteLine("AudioSampleRate = " + AudioSampleRate);
+        }
+
+        public void SetAudioSampleRate(string rate)
+        {
+            if (rate == null || rate.Equals(""))
+            {
+                AudioSampleRate = 44100;
+            }
+            else
+            {
+                try
+                {
+                    AudioSampleRate = int.Parse(rate);
+                }
+                catch (Exception ex)
+                {
+                    AudioSampleRate = 44100;
+                    Log.WriteLine(ex.ToString());
+                }
+            }
+            SetAudioSampleRate(AudioSampleRate);
+        }
+
+        public void SetAudioFrameSize(int size)
+        {
+            AudioFrameSize = size;
+            Log.WriteLine("AudioFrameSize = " + AudioFrameSize);
+        }
+
+        public void SetAudioFrameSize(string size)
+        {
+            if (size == null || size.Equals(""))
+            {
+                AudioFrameSize = 10 * 4 * 1024;
+            }
+            else
+            {
+                try
+                {
+                    AudioFrameSize = int.Parse(size);
+                }
+                catch (Exception ex)
+                {
+                    AudioFrameSize = 10 * 4 * 1024;
+                    Log.WriteLine(ex.ToString());
+                }
+            }
+            SetAudioFrameSize(AudioFrameSize);
+        }
+
         public void SetAudioInputPath(string path)
         {
             AudioInputPath = path;
+            Log.WriteLine("AudioInputPath = " + AudioInputPath);
         }
 
         public void SetVideoMixingMode(VideoMode mode)
         {
             VideoMixingMode = mode;
-            Console.WriteLine("VideoMixingMode = " + VideoMixingMode);
+            Log.WriteLine("VideoMixingMode = " + VideoMixingMode);
 
             if (VideoMixingMode == VideoMode.SideBySide)
             {
@@ -144,10 +231,10 @@ namespace VACamera
                 {
                     VideoMixingMode = (VideoMode)Enum.Parse(typeof(VideoMode), mode);
                 }
-                catch (Exception e)
+                catch (Exception ex)
                 {
                     VideoMixingMode = VideoMode.Single;
-                    Console.WriteLine(e.ToString());
+                    Log.WriteLine(ex.ToString());
                 }
             }
             SetVideoMixingMode(VideoMixingMode);
@@ -156,19 +243,19 @@ namespace VACamera
         public void SetCamera1_InputPath(string path)
         {
             Camera1_InputPath = path;
-            Console.WriteLine("Camera1_InputPath = " + Camera1_InputPath);
+            Log.WriteLine("Camera1_InputPath = " + Camera1_InputPath);
         }
 
         public void SetCamera2_InputPath(string path)
         {
             Camera2_InputPath = path;
-            Console.WriteLine("Camera2_InputPath = " + Camera2_InputPath);
+            Log.WriteLine("Camera2_InputPath = " + Camera2_InputPath);
         }
 
         public void SetVideoOutputFormat(VideoFormat format)
         {
             VideoOutputFormat = format;
-            Console.WriteLine("VideoOutputFormat = " + VideoOutputFormat);
+            Log.WriteLine("VideoOutputFormat = " + VideoOutputFormat);
         }
         public void SetVideoOutputFormat(string format)
         {
@@ -182,67 +269,67 @@ namespace VACamera
                 {
                     VideoOutputFormat = (VideoFormat)Enum.Parse(typeof(VideoFormat), format);
                 }
-                catch (Exception e)
+                catch (Exception ex)
                 {
                     VideoOutputFormat = VideoFormat.MPEG4;
-                    Console.WriteLine(e.ToString());
+                    Log.WriteLine(ex.ToString());
                 }
             }
             SetVideoOutputFormat(VideoOutputFormat);
         }
 
-        public void SetBitRate(int rate)
+        public void SetVideoBitRate(int rate)
         {
-            BitRate = rate;
-            Console.WriteLine("BitRate = " + BitRate);
+            VideoBitRate = rate;
+            Log.WriteLine("VideoBitRate = " + VideoBitRate);
         }
 
-        public void SetBitRate(string rate)
+        public void SetVideoBitRate(string rate)
         {
             if (rate == null || rate.Equals(""))
             {
-                BitRate = 3 * 1024 * 1024;
+                VideoBitRate = 3000 * 1000;
             }
             else
             {
                 try
                 {
-                    BitRate = int.Parse(rate);
+                    VideoBitRate = int.Parse(rate);
                 }
                 catch (Exception ex)
                 {
-                    BitRate = 3 * 1024 * 1024;
-                    Console.WriteLine(ex.StackTrace);
+                    VideoBitRate = 3000 * 1000;
+                    Log.WriteLine(ex.ToString());
                 }
             }
-            SetBitRate(BitRate);
+            SetVideoBitRate(VideoBitRate);
         }
 
-        public void SetFrameRate(int rate)
+        public void SetVideoFrameRate(int rate)
         {
-            FrameRate = rate;
-            Console.WriteLine("FrameRate = " + FrameRate);
+            VideoFrameRate = rate;
+            Log.WriteLine("VideoFrameRate = " + VideoFrameRate);
         }
 
-        public void SetFrameRate(string rate)
+        public void SetVideoFrameRate(string rate)
         {
             if (rate == null || rate.Equals(""))
             {
-                FrameRate = 30;
+                VideoFrameRate = 30;
             }
             else
             {
                 try
                 {
-                    FrameRate = int.Parse(rate);
+                    VideoFrameRate = int.Parse(rate);
                 }
                 catch (Exception ex)
                 {
-                    FrameRate = 30;
-                    Console.WriteLine(ex.StackTrace);
+                    VideoFrameRate = 30;
+                    Log.WriteLine(ex.ToString());
                 }
             }
-            SetFrameRate(FrameRate);
+            SetVideoFrameRate(VideoFrameRate);
         }
 
         public void LoadSettings()
@@ -251,15 +338,18 @@ namespace VACamera
             {
                 SetAudioInputPath(iniFile.ReadValue("Settings", "AudioInputPath"));
                 SetAudioChannel(iniFile.ReadValue("Settings", "AudioChannel"));
+                SetAudioBitRate(iniFile.ReadValue("Settings", "AudioBitRate"));
+                SetAudioSampleRate(iniFile.ReadValue("Settings", "AudioSampleRate"));
+                SetAudioFrameSize(iniFile.ReadValue("Settings", "AudioFrameSize"));
                 SetVideoMixingMode(iniFile.ReadValue("Settings", "VideoMixingMode"));
                 SetCamera1_InputPath(iniFile.ReadValue("Settings", "Camera1_InputPath"));
                 SetCamera2_InputPath(iniFile.ReadValue("Settings", "Camera2_InputPath"));
                 SetVideoOutputFormat(iniFile.ReadValue("Settings", "VideoOutputFormat"));
-                SetBitRate(iniFile.ReadValue("Settings", "BitRate"));
-                SetFrameRate(iniFile.ReadValue("Settings", "FrameRate"));
+                SetVideoBitRate(iniFile.ReadValue("Settings", "VideoBitRate"));
+                SetVideoFrameRate(iniFile.ReadValue("Settings", "VideoFrameRate"));
             }
 
-            Console.WriteLine(ToString());
+            Log.WriteLine(ToString());
         }
 
         public void SaveSettings()
@@ -268,13 +358,18 @@ namespace VACamera
             {
                 iniFile.WriteValue("Settings", "AudioInputPath", AudioInputPath);
                 iniFile.WriteValue("Settings", "AudioChannel", AudioChannel.ToString());
+                iniFile.WriteValue("Settings", "AudioBitRate", AudioBitRate.ToString());
+                iniFile.WriteValue("Settings", "AudioSampleRate", AudioSampleRate.ToString());
+                iniFile.WriteValue("Settings", "AudioFrameSize", AudioFrameSize.ToString());
                 iniFile.WriteValue("Settings", "Camera1_InputPath", Camera1_InputPath);
                 iniFile.WriteValue("Settings", "Camera2_InputPath", Camera2_InputPath);
                 iniFile.WriteValue("Settings", "VideoMixingMode", VideoMixingMode.ToString());
                 iniFile.WriteValue("Settings", "VideoOutputFormat", VideoOutputFormat.ToString());
-                iniFile.WriteValue("Settings", "BitRate", BitRate.ToString());
-                iniFile.WriteValue("Settings", "FrameRate", FrameRate.ToString());
+                iniFile.WriteValue("Settings", "VideoBitRate", VideoBitRate.ToString());
+                iniFile.WriteValue("Settings", "VideoFrameRate", VideoFrameRate.ToString());
             }
+
+            Log.WriteLine(ToString());
         }
 
         override public string ToString()
@@ -283,6 +378,9 @@ namespace VACamera
             stringBuilder.Append(Environment.NewLine + "[" + Environment.NewLine);
             stringBuilder.Append("AudioInputPath = " + AudioInputPath + Environment.NewLine);
             stringBuilder.Append("AudioChannel = " + AudioChannel + Environment.NewLine);
+            stringBuilder.Append("AudioBitRate = " + AudioBitRate + Environment.NewLine);
+            stringBuilder.Append("AudioSampleRate = " + AudioSampleRate + Environment.NewLine);
+            stringBuilder.Append("AudioFrameSize = " + AudioFrameSize + Environment.NewLine);
             stringBuilder.Append("Camera1_InputPath = " + Camera1_InputPath + Environment.NewLine);
             stringBuilder.Append("Camera2_InputPath = " + Camera2_InputPath + Environment.NewLine);
             stringBuilder.Append("VideoMixingMode = " + VideoMixingMode + Environment.NewLine);
@@ -295,8 +393,8 @@ namespace VACamera
             stringBuilder.Append("Frame2_X = " + Frame2_X + Environment.NewLine);
             stringBuilder.Append("Frame2_Y = " + Frame2_Y + Environment.NewLine);
             stringBuilder.Append("VideoOutputFormat = " + VideoOutputFormat + Environment.NewLine);
-            stringBuilder.Append("FrameRate = " + FrameRate + Environment.NewLine);
-            stringBuilder.Append("BitRate = " + BitRate + Environment.NewLine);
+            stringBuilder.Append("VideoFrameRate = " + VideoFrameRate + Environment.NewLine);
+            stringBuilder.Append("VideoBitRate = " + VideoBitRate + Environment.NewLine);
             stringBuilder.Append("]" + Environment.NewLine);
 
             return stringBuilder.ToString();

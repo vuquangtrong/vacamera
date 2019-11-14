@@ -1,4 +1,6 @@
-﻿namespace VACamera
+﻿using System;
+
+namespace VACamera
 {
     partial class FormMain
     {
@@ -35,22 +37,24 @@
             this.exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.btnRecord = new System.Windows.Forms.Button();
-            this.btnPause = new System.Windows.Forms.Button();
-            this.btnStop = new System.Windows.Forms.Button();
-            this.btnReplay = new System.Windows.Forms.Button();
-            this.btnWriteDisk = new System.Windows.Forms.Button();
             this.label1 = new System.Windows.Forms.Label();
             this.txtTimeRun = new System.Windows.Forms.Label();
             this.txtTimeLeft = new System.Windows.Forms.Label();
             this.label5 = new System.Windows.Forms.Label();
-            this.pictureFrame = new System.Windows.Forms.PictureBox();
             this.timerRecord = new System.Windows.Forms.Timer(this.components);
             this.timerFPS = new System.Windows.Forms.Timer(this.components);
             this.txtCamFps1 = new System.Windows.Forms.Label();
             this.txtCamFps2 = new System.Windows.Forms.Label();
             this.timer1 = new System.Windows.Forms.Timer(this.components);
+            this.signalRecord = new System.Windows.Forms.PictureBox();
+            this.btnWriteDisk = new System.Windows.Forms.Button();
+            this.btnReplay = new System.Windows.Forms.Button();
+            this.btnStop = new System.Windows.Forms.Button();
+            this.btnPause = new System.Windows.Forms.Button();
+            this.btnRecord = new System.Windows.Forms.Button();
+            this.pictureFrame = new System.Windows.Forms.PictureBox();
             this.menuStrip1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.signalRecord)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureFrame)).BeginInit();
             this.SuspendLayout();
             // 
@@ -104,57 +108,6 @@
             this.aboutToolStripMenuItem.Text = "&Phiên bản";
             this.aboutToolStripMenuItem.Click += new System.EventHandler(this.aboutToolStripMenuItem_Click);
             // 
-            // btnRecord
-            // 
-            this.btnRecord.Location = new System.Drawing.Point(77, 517);
-            this.btnRecord.Name = "btnRecord";
-            this.btnRecord.Size = new System.Drawing.Size(120, 40);
-            this.btnRecord.TabIndex = 3;
-            this.btnRecord.Text = "Ghi (F5)";
-            this.btnRecord.UseVisualStyleBackColor = true;
-            this.btnRecord.Click += new System.EventHandler(this.btnRecord_Click);
-            // 
-            // btnPause
-            // 
-            this.btnPause.Location = new System.Drawing.Point(206, 517);
-            this.btnPause.Name = "btnPause";
-            this.btnPause.Size = new System.Drawing.Size(120, 40);
-            this.btnPause.TabIndex = 3;
-            this.btnPause.Text = "Dừng (F6)";
-            this.btnPause.UseVisualStyleBackColor = true;
-            this.btnPause.Click += new System.EventHandler(this.btnPause_Click);
-            // 
-            // btnStop
-            // 
-            this.btnStop.Location = new System.Drawing.Point(335, 517);
-            this.btnStop.Name = "btnStop";
-            this.btnStop.Size = new System.Drawing.Size(120, 40);
-            this.btnStop.TabIndex = 3;
-            this.btnStop.Text = "Kết thúc (F8)";
-            this.btnStop.UseVisualStyleBackColor = true;
-            this.btnStop.Click += new System.EventHandler(this.btnStop_Click);
-            // 
-            // btnReplay
-            // 
-            this.btnReplay.Location = new System.Drawing.Point(464, 517);
-            this.btnReplay.Name = "btnReplay";
-            this.btnReplay.Size = new System.Drawing.Size(120, 40);
-            this.btnReplay.TabIndex = 3;
-            this.btnReplay.Text = "Xem lại (F7)";
-            this.btnReplay.UseVisualStyleBackColor = true;
-            this.btnReplay.Click += new System.EventHandler(this.btnReplay_Click);
-            // 
-            // btnWriteDisk
-            // 
-            this.btnWriteDisk.Location = new System.Drawing.Point(593, 517);
-            this.btnWriteDisk.Name = "btnWriteDisk";
-            this.btnWriteDisk.Size = new System.Drawing.Size(120, 40);
-            this.btnWriteDisk.TabIndex = 3;
-            this.btnWriteDisk.Text = "Ghi DVD (F9)";
-            this.btnWriteDisk.UseVisualStyleBackColor = true;
-            this.btnWriteDisk.Visible = false;
-            this.btnWriteDisk.Click += new System.EventHandler(this.btnWriteDisk_Click);
-            // 
             // label1
             // 
             this.label1.AutoSize = true;
@@ -191,18 +144,6 @@
             this.label5.TabIndex = 4;
             this.label5.Text = "Thời gian còn lại:";
             // 
-            // pictureFrame
-            // 
-            this.pictureFrame.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.pictureFrame.Location = new System.Drawing.Point(77, 31);
-            this.pictureFrame.MaximumSize = new System.Drawing.Size(854, 480);
-            this.pictureFrame.MinimumSize = new System.Drawing.Size(854, 480);
-            this.pictureFrame.Name = "pictureFrame";
-            this.pictureFrame.Size = new System.Drawing.Size(854, 480);
-            this.pictureFrame.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
-            this.pictureFrame.TabIndex = 2;
-            this.pictureFrame.TabStop = false;
-            // 
             // timerRecord
             // 
             this.timerRecord.Interval = 1000;
@@ -237,11 +178,102 @@
             this.timer1.Interval = 1000;
             this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
             // 
+            // signalRecord
+            // 
+            this.signalRecord.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.signalRecord.Location = new System.Drawing.Point(937, 31);
+            this.signalRecord.Name = "signalRecord";
+            this.signalRecord.Size = new System.Drawing.Size(48, 48);
+            this.signalRecord.TabIndex = 6;
+            this.signalRecord.TabStop = false;
+            // 
+            // btnWriteDisk
+            // 
+            this.btnWriteDisk.Image = global::VACamera.Properties.Resources.burn;
+            this.btnWriteDisk.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.btnWriteDisk.Location = new System.Drawing.Point(956, 514);
+            this.btnWriteDisk.Name = "btnWriteDisk";
+            this.btnWriteDisk.Size = new System.Drawing.Size(40, 40);
+            this.btnWriteDisk.TabIndex = 5;
+            this.btnWriteDisk.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            this.btnWriteDisk.UseVisualStyleBackColor = true;
+            this.btnWriteDisk.Visible = false;
+            this.btnWriteDisk.Click += new System.EventHandler(this.btnWriteDisk_Click);
+            // 
+            // btnReplay
+            // 
+            this.btnReplay.Image = global::VACamera.Properties.Resources.play;
+            this.btnReplay.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.btnReplay.Location = new System.Drawing.Point(572, 517);
+            this.btnReplay.Name = "btnReplay";
+            this.btnReplay.Size = new System.Drawing.Size(140, 40);
+            this.btnReplay.TabIndex = 4;
+            this.btnReplay.Text = "Xem lại (F7)";
+            this.btnReplay.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            this.btnReplay.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+            this.btnReplay.UseVisualStyleBackColor = true;
+            this.btnReplay.Click += new System.EventHandler(this.btnReplay_Click);
+            // 
+            // btnStop
+            // 
+            this.btnStop.Image = global::VACamera.Properties.Resources.stop;
+            this.btnStop.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.btnStop.Location = new System.Drawing.Point(407, 517);
+            this.btnStop.Name = "btnStop";
+            this.btnStop.Size = new System.Drawing.Size(140, 40);
+            this.btnStop.TabIndex = 3;
+            this.btnStop.Text = "Kết thúc (F8)";
+            this.btnStop.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            this.btnStop.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+            this.btnStop.UseVisualStyleBackColor = true;
+            this.btnStop.Click += new System.EventHandler(this.btnStop_Click);
+            // 
+            // btnPause
+            // 
+            this.btnPause.Image = global::VACamera.Properties.Resources.pause;
+            this.btnPause.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.btnPause.Location = new System.Drawing.Point(242, 517);
+            this.btnPause.Name = "btnPause";
+            this.btnPause.Size = new System.Drawing.Size(140, 40);
+            this.btnPause.TabIndex = 2;
+            this.btnPause.Text = "Dừng (F6)";
+            this.btnPause.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            this.btnPause.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+            this.btnPause.UseVisualStyleBackColor = true;
+            this.btnPause.Click += new System.EventHandler(this.btnPause_Click);
+            // 
+            // btnRecord
+            // 
+            this.btnRecord.Image = global::VACamera.Properties.Resources.rec;
+            this.btnRecord.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.btnRecord.Location = new System.Drawing.Point(77, 517);
+            this.btnRecord.Name = "btnRecord";
+            this.btnRecord.Size = new System.Drawing.Size(140, 40);
+            this.btnRecord.TabIndex = 1;
+            this.btnRecord.Text = "Ghi (F5)";
+            this.btnRecord.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            this.btnRecord.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+            this.btnRecord.UseVisualStyleBackColor = true;
+            this.btnRecord.Click += new System.EventHandler(this.btnRecord_Click);
+            // 
+            // pictureFrame
+            // 
+            this.pictureFrame.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.pictureFrame.Location = new System.Drawing.Point(77, 31);
+            this.pictureFrame.MaximumSize = new System.Drawing.Size(854, 480);
+            this.pictureFrame.MinimumSize = new System.Drawing.Size(854, 480);
+            this.pictureFrame.Name = "pictureFrame";
+            this.pictureFrame.Size = new System.Drawing.Size(854, 480);
+            this.pictureFrame.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
+            this.pictureFrame.TabIndex = 2;
+            this.pictureFrame.TabStop = false;
+            // 
             // FormMain
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
             this.ClientSize = new System.Drawing.Size(1008, 561);
             this.ControlBox = false;
+            this.Controls.Add(this.signalRecord);
             this.Controls.Add(this.txtCamFps2);
             this.Controls.Add(this.txtCamFps1);
             this.Controls.Add(this.txtTimeLeft);
@@ -271,6 +303,7 @@
             this.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.FormMain_KeyPress);
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.signalRecord)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureFrame)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
@@ -300,6 +333,7 @@
         private System.Windows.Forms.Label txtCamFps1;
         private System.Windows.Forms.Label txtCamFps2;
         private System.Windows.Forms.Timer timer1;
+        private System.Windows.Forms.PictureBox signalRecord;
     }
 }
 

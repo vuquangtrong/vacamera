@@ -39,13 +39,11 @@ namespace VACamera
 
         Bitmap videoFrame = null;
         Graphics graphics = null;
-        Font textFont = new Font("Tahoma", 20);
-        Rectangle textPosition = new Rectangle(10, Settings.VideoHeight - 40, 200, 40);
-        Rectangle textPosition1 = new Rectangle(10, 10, 200, 40);
-        Rectangle textPosition2 = new Rectangle(10, 50, 200, 40);
-        Rectangle textPosition3 = new Rectangle(10, 90, 200, 40);
-        Rectangle textPosition4 = new Rectangle(10, 130, 200, 40);
-        Rectangle textPosition5 = new Rectangle(10, 170, 200, 40);
+        Font textFont = new Font("Tahoma", 18);
+        StringFormat textDirectionRTL = new StringFormat(StringFormatFlags.DirectionRightToLeft);
+        Rectangle textLine1 = new Rectangle(10, 10, Settings.VideoWidth - 20, 40);
+        Rectangle textLine2 = new Rectangle(10, Settings.VideoHeight - 10 - 40 - 40, Settings.VideoWidth - 20, 40);
+        Rectangle textLine3 = new Rectangle(10, Settings.VideoHeight - 10 - 40, Settings.VideoWidth - 20, 40);
 
         Stopwatch stopWatchFPS = null;
 
@@ -137,6 +135,8 @@ namespace VACamera
 
             // debug runtime
             //timer1.Stop();
+
+            settings.SaveSettings();
         }
 
         //private void VideoRenderWorker()
@@ -569,12 +569,16 @@ namespace VACamera
             }
 
             // add text
-            graphics.DrawString(DateTime.Now.ToString("HH:mm:ss"), textFont, Brushes.Red, textPosition);
-            graphics.DrawString(sessionInfo.Name1, textFont, Brushes.Red, textPosition1);
-            graphics.DrawString(sessionInfo.Name2, textFont, Brushes.Red, textPosition2);
-            graphics.DrawString(sessionInfo.Name3, textFont, Brushes.Red, textPosition3);
-            graphics.DrawString(sessionInfo.Name4, textFont, Brushes.Red, textPosition4);
-            graphics.DrawString(sessionInfo.Name5, textFont, Brushes.Red, textPosition5);
+            // TopLeft: Name1
+            graphics.DrawString(sessionInfo.Name1, textFont, Brushes.Red, textLine1);
+            // TopRight: Name 2
+            graphics.DrawString(sessionInfo.Name2, textFont, Brushes.Red, textLine1, textDirectionRTL);
+            // BottomLeft: Name 3, Name 4
+            graphics.DrawString(sessionInfo.Name3, textFont, Brushes.Red, textLine2);
+            graphics.DrawString(sessionInfo.Name4, textFont, Brushes.Red, textLine3);
+            // BottomRight: Name 5 and DateTime
+            graphics.DrawString(sessionInfo.Name5, textFont, Brushes.Red, textLine2, textDirectionRTL);
+            graphics.DrawString(DateTime.Now.ToString("HH:mm:ss dd/MM/yyyy"), textFont, Brushes.Red, textLine3, textDirectionRTL);
 
             // show preview
             UpdateLiveImage(pictureFrame, (Bitmap)videoFrame.Clone());
@@ -620,7 +624,7 @@ namespace VACamera
                 videoFileWriter.Width = Settings.VideoWidth;
                 videoFileWriter.Height = Settings.VideoHeight;
                 videoFileWriter.VideoCodec = videoCodec;
-                
+
                 // advanced settings
                 //videoFileWriter.VideoOptions["crf"] = "18"; // visually lossless
                 //videoFileWriter.VideoOptions["preset"] = "veryfast";
@@ -785,6 +789,7 @@ namespace VACamera
                 btnWriteDisk.Enabled = false;
 
                 settingsToolStripMenuItem.Enabled = false; // do not change settings during recording
+                signalRecord.BackgroundImage = global::VACamera.Properties.Resources.rec_on;
 
                 StartRecording();
             }
@@ -797,8 +802,10 @@ namespace VACamera
                 btnRecord.Enabled = true;
                 btnPause.Enabled = false;
                 btnStop.Enabled = true;
-                btnReplay.Enabled = false;
+                btnReplay.Enabled = true;
                 btnWriteDisk.Enabled = false;
+
+                signalRecord.BackgroundImage = global::VACamera.Properties.Resources.rec_pause;
 
                 PauseRecording();
             }
@@ -818,6 +825,7 @@ namespace VACamera
                     btnWriteDisk.Enabled = true;
 
                     settingsToolStripMenuItem.Enabled = true; // can change settings again
+                    signalRecord.BackgroundImage = null;
 
                     StopRecording();
                     Thread.Sleep(1000);
@@ -830,7 +838,14 @@ namespace VACamera
 
         private void btnReplay_Click(object sender, EventArgs e)
         {
-
+            if (videoRecordState == VideoRecordState.IDLE
+                || videoRecordState == VideoRecordState.PAUSE)
+            {
+                if (File.Exists(outputFile))
+                {
+                    Process.Start(outputFile);
+                }
+            }
         }
 
         private void btnWriteDisk_Click(object sender, EventArgs e)
@@ -870,6 +885,18 @@ namespace VACamera
 
             TimeSpan timeLeft = TimeSpan.FromSeconds(sessionInfo.MaxTime - recordTime);
             txtTimeLeft.Text = timeLeft.ToString("hh':'mm':'ss");
+
+            if (videoRecordState == VideoRecordState.RECORDING)
+            {
+                if (recordTime % 2 == 0)
+                {
+                    signalRecord.BackgroundImage = global::VACamera.Properties.Resources.rec_on;
+                }
+                else
+                {
+                    signalRecord.BackgroundImage = global::VACamera.Properties.Resources.rec_off;
+                }
+            }
         }
 
         private void timerFPS_Tick(object sender, EventArgs e)

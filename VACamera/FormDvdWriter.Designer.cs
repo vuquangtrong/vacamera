@@ -40,9 +40,7 @@
             this.txtStatus2 = new System.Windows.Forms.Label();
             this.listDrive2 = new System.Windows.Forms.ComboBox();
             this.backgroundBurnWorker1 = new System.ComponentModel.BackgroundWorker();
-            this.backgroundFormatWorker1 = new System.ComponentModel.BackgroundWorker();
             this.backgroundBurnWorker2 = new System.ComponentModel.BackgroundWorker();
-            this.backgroundFormatWorker2 = new System.ComponentModel.BackgroundWorker();
             this.btnWrite2 = new System.Windows.Forms.Button();
             this.label3 = new System.Windows.Forms.Label();
             this.btnWriteAll = new System.Windows.Forms.Button();
@@ -238,9 +236,7 @@
         private System.Windows.Forms.Label txtStatus2;
         private System.Windows.Forms.ComboBox listDrive2;
         private System.ComponentModel.BackgroundWorker backgroundBurnWorker1;
-        private System.ComponentModel.BackgroundWorker backgroundFormatWorker1;
         private System.ComponentModel.BackgroundWorker backgroundBurnWorker2;
-        private System.ComponentModel.BackgroundWorker backgroundFormatWorker2;
         private System.Windows.Forms.Button btnWrite2;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.Button btnWriteAll;

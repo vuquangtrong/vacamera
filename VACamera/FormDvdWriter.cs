@@ -85,11 +85,10 @@ namespace VACamera
                     listDrive2.SelectedIndex = 1;
                 }
             }
-            catch (COMException ex)
+            catch (Exception ex)
             {
-                MessageBox.Show(ex.Message,
-                    string.Format("Lỗi {0} - Không hỗ trợ thư viện IMAPI2", ex.ErrorCode),
-                    MessageBoxButtons.OK, MessageBoxIcon.Stop);
+                MessageBox.Show("Thiết bị không hỗ trợ thư viện IMAPI2");
+                Log.WriteLine(ex.ToString());
                 return;
             }
             finally
@@ -109,17 +108,26 @@ namespace VACamera
 
         private void FormDvdWriter_FormClosing(object sender, FormClosingEventArgs e)
         {
-            foreach (MsftDiscRecorder2 discRecorder2 in listDrive1.Items)
+            try
             {
-                if (discRecorder2 != null)
+                foreach (MsftDiscRecorder2 discRecorder2 in listDrive1.Items)
                 {
-                    try
+                    if (discRecorder2 != null)
                     {
-                        Marshal.ReleaseComObject(discRecorder2);
+                        try
+                        {
+                            Marshal.ReleaseComObject(discRecorder2);
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.WriteLine(ex.ToString());
+                        }
                     }
-                    catch (Exception)
-                    { }
                 }
+            }
+            catch (Exception ex)
+            {
+                Log.WriteLine(ex.ToString());
             }
         }
 
@@ -246,7 +254,17 @@ namespace VACamera
                 // Create and initialize the IDiscRecorder2 object
                 discRecorder = new MsftDiscRecorder2();
                 var burnData = (BurnData)e.Argument;
-                discRecorder.InitializeDiscRecorder(burnData.uniqueRecorderId);
+                try
+                {
+                    Log.WriteLine("uniqueRecorderId = " + burnData.uniqueRecorderId);
+                    discRecorder.InitializeDiscRecorder(burnData.uniqueRecorderId);
+                }
+                catch (Exception ex)
+                {
+                    e.Result = -1;
+                    Log.WriteLine(ex.ToString());
+                    return;
+                }
 
                 // Create and initialize the IDiscFormat2Data
                 discFormatData = new MsftDiscFormat2Data
@@ -272,27 +290,23 @@ namespace VACamera
                 if (!createMediaFileSystem(discRecorder, multisessionInterfaces, out fileSystem))
                 {
                     e.Result = -1;
+                    Log.WriteLine("Cannot create filesystem on disk!");
                     return;
                 }
 
-                //
                 // add the Update event handler
-                //
-                discFormatData.Update += discFormatData1_Update;
+                discFormatData.Update += discFormatData2_Update;
 
-                //
                 // Write the data here
-                //
                 try
                 {
                     discFormatData.Write(fileSystem);
                     e.Result = 0;
                 }
-                catch (COMException ex)
+                catch (Exception ex)
                 {
-                    e.Result = ex.ErrorCode;
-                    MessageBox.Show(ex.Message, "IDiscFormat2Data.Write failed",
-                        MessageBoxButtons.OK, MessageBoxIcon.Stop);
+                    e.Result = -1;
+                    Log.WriteLine(ex.ToString());
                 }
                 finally
                 {
@@ -302,23 +316,18 @@ namespace VACamera
                     }
                 }
 
-                //
                 // remove the Update event handler
-                //
-                discFormatData.Update -= discFormatData1_Update;
+                discFormatData.Update -= discFormatData2_Update;
 
                 if (_ejectMedia)
                 {
                     discRecorder.EjectMedia();
                 }
             }
-            catch (COMException exception)
+            catch (Exception ex)
             {
-                //
-                // If anything happens during the format, show the message
-                //
-                MessageBox.Show(exception.Message);
-                e.Result = exception.ErrorCode;
+                e.Result = -1;
+                Log.WriteLine(ex.ToString());
             }
             finally
             {
@@ -343,7 +352,17 @@ namespace VACamera
                 // Create and initialize the IDiscRecorder2 object
                 discRecorder = new MsftDiscRecorder2();
                 var burnData = (BurnData)e.Argument;
-                discRecorder.InitializeDiscRecorder(burnData.uniqueRecorderId);
+                try
+                {
+                    Log.WriteLine("uniqueRecorderId = " + burnData.uniqueRecorderId);
+                    discRecorder.InitializeDiscRecorder(burnData.uniqueRecorderId);
+                }
+                catch (Exception ex)
+                {
+                    e.Result = -1;
+                    Log.WriteLine(ex.ToString());
+                    return;
+                }
 
                 // Create and initialize the IDiscFormat2Data
                 discFormatData = new MsftDiscFormat2Data
@@ -369,27 +388,23 @@ namespace VACamera
                 if (!createMediaFileSystem(discRecorder, multisessionInterfaces, out fileSystem))
                 {
                     e.Result = -1;
+                    Log.WriteLine("Cannot create filesystem on disk!");
                     return;
                 }
 
-                //
                 // add the Update event handler
-                //
                 discFormatData.Update += discFormatData2_Update;
 
-                //
                 // Write the data here
-                //
                 try
                 {
                     discFormatData.Write(fileSystem);
                     e.Result = 0;
                 }
-                catch (COMException ex)
+                catch (Exception ex)
                 {
-                    e.Result = ex.ErrorCode;
-                    MessageBox.Show(ex.Message, "IDiscFormat2Data.Write failed",
-                        MessageBoxButtons.OK, MessageBoxIcon.Stop);
+                    e.Result = -1;
+                    Log.WriteLine(ex.ToString());
                 }
                 finally
                 {
@@ -399,9 +414,7 @@ namespace VACamera
                     }
                 }
 
-                //
                 // remove the Update event handler
-                //
                 discFormatData.Update -= discFormatData2_Update;
 
                 if (_ejectMedia)
@@ -409,13 +422,10 @@ namespace VACamera
                     discRecorder.EjectMedia();
                 }
             }
-            catch (COMException exception)
+            catch (Exception ex)
             {
-                //
-                // If anything happens during the format, show the message
-                //
-                MessageBox.Show(exception.Message);
-                e.Result = exception.ErrorCode;
+                e.Result = -1;
+                Log.WriteLine(ex.ToString());
             }
             finally
             {
@@ -657,9 +667,10 @@ namespace VACamera
                         fileSystemImage.MultisessionInterfaces = multisessionInterfaces;
                         fileSystemImage.ImportFileSystem();
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
                         // ignore multisession
+                        Log.WriteLine(ex.ToString());
                     }
                 }
 
@@ -676,17 +687,19 @@ namespace VACamera
                 {
                     dataStream = fileSystemImage.CreateResultImage().ImageStream;
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
                     dataStream = null;
                     MessageBox.Show("Ổ đĩa bị khóa hoặc có lỗi trong quá trình định dạng đĩa");
+                    Log.WriteLine(ex.ToString());
                     return false;
                 }
             }
-            catch (COMException)
+            catch (Exception ex)
             {
-                MessageBox.Show("Ổ đĩa bị khóa hoặc có lỗi trong quá trình định dạng đĩa");
                 dataStream = null;
+                MessageBox.Show("Ổ đĩa bị khóa hoặc có lỗi trong quá trình định dạng đĩa");
+                Log.WriteLine(ex.ToString());
                 return false;
             }
             finally
@@ -808,9 +821,10 @@ namespace VACamera
                             fileSystemImage.MultisessionInterfaces = discFormatData.MultisessionInterfaces;
                             fileSystemImage.ImportFileSystem();
                         }
-                        catch (Exception)
+                        catch (Exception ex)
                         {
                             txtStatus1.Text = GetMediaTypeString(mediaType) + " - " + "Đĩa đã bị khóa chức năng ghi.";
+                            Log.WriteLine(ex.ToString());
                             return false;
                         }
                     }
@@ -873,9 +887,10 @@ namespace VACamera
                             fileSystemImage.MultisessionInterfaces = discFormatData.MultisessionInterfaces;
                             fileSystemImage.ImportFileSystem();
                         }
-                        catch (Exception)
+                        catch (Exception ex)
                         {
                             txtStatus2.Text = GetMediaTypeString(mediaType) + " - " + "Đĩa đã bị khóa chức năng ghi.";
+                            Log.WriteLine(ex.ToString());
                             return false;
                         }
                     }
@@ -925,11 +940,6 @@ namespace VACamera
         {
             if (!(_isBurning1 || _isBurning2))
             {
-                if (_isFinish1 || _isFinish2)
-                {
-                    MessageBox.Show("Hoàn thành ghi đĩa DVD");
-                }
-
                 // clean file
                 try
                 {
@@ -953,7 +963,7 @@ namespace VACamera
                                 DialogResult = DialogResult.Yes;
                                 Close();
                             }
-                        }
+                        } // cancel to force close
                         else
                         {
                             DialogResult = DialogResult.No;
@@ -1012,8 +1022,9 @@ namespace VACamera
                         {
                             fileSystemImage.MultisessionInterfaces = discFormatData.MultisessionInterfaces;
                         }
-                        catch (Exception)
+                        catch (Exception ex)
                         {
+                            Log.WriteLine(ex.ToString());
                             return false;
                         }
                         fileSystemImage.ImportFileSystem();

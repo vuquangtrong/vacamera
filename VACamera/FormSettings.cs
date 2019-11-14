@@ -12,7 +12,7 @@ namespace VACamera
         public Settings Settings;
         private FilterInfoCollection videoDevices;
         private List<AudioDeviceInfo> audioDevices = null;
-        private bool isChanged = false;
+        private bool isDeviceChanged = false;
 
         public FormSettings()
         {
@@ -125,7 +125,8 @@ namespace VACamera
             if (videoDevices.Count >= 2)
             {
                 listVideoMixingMode.SelectedIndex = (int)Settings.VideoMixingMode;
-            } else
+            }
+            else
             {
                 listVideoMixingMode.SelectedIndex = 0;
             }
@@ -143,85 +144,85 @@ namespace VACamera
             ToggleVideoSettings();
 
             // reset flag
-            isChanged = false;
+            isDeviceChanged = false;
         }
 
         private void listAudioSource_SelectedIndexChanged(object sender, EventArgs e)
         {
-            Log.WriteLine("listAudioSource = " + listAudioSource.Text);
-            Settings.SetAudioInputPath(listAudioSource.Text);
-            isChanged = true;
+            if (!listAudioSource.Text.Equals(Settings.AudioInputPath))
+            {
+                Log.WriteLine("listAudioSource = " + listAudioSource.Text);
+                Settings.SetAudioInputPath(listAudioSource.Text);
+                isDeviceChanged = true;
+            }
         }
 
         private void listAudioChannel_SelectedIndexChanged(object sender, EventArgs e)
         {
             Log.WriteLine("listAudioChannel = " + GetAudioMode(listAudioChannel.SelectedIndex));
             Settings.SetAudioChannel(GetAudioMode(listAudioChannel.SelectedIndex));
-            isChanged = true;
         }
 
         private void listVideoMixingMode_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (videoDevices.Count >= 2)
             {
-                Log.WriteLine("listVideoMixingMode = " + GetVideoMode(listVideoMixingMode.SelectedIndex));
-                Settings.SetVideoMixingMode(GetVideoMode(listVideoMixingMode.SelectedIndex));
-                
-            } else
+                if (listVideoMixingMode.SelectedIndex != (int)Settings.VideoMixingMode)
+                {
+                    Log.WriteLine("listVideoMixingMode = " + GetVideoMode(listVideoMixingMode.SelectedIndex));
+                    Settings.SetVideoMixingMode(GetVideoMode(listVideoMixingMode.SelectedIndex));
+                    isDeviceChanged = true;
+                }
+            }
+            else
             {
                 Settings.SetVideoMixingMode(Settings.VideoMode.Single);
             }
             ToggleVideoSettings();
-            isChanged = true;
         }
 
         private void listCamera1_SelectedIndexChanged(object sender, EventArgs e)
         {
-            Log.WriteLine("listCamera1 = " + listCamera1.Text);
-            Settings.SetCamera1_InputPath(videoDevices[listCamera1.SelectedIndex].MonikerString);
-            isChanged = true;
+            if (!listCamera1.Text.Equals(Settings.Camera1_InputPath))
+            {
+                Log.WriteLine("listCamera1 = " + listCamera1.Text);
+                Settings.SetCamera1_InputPath(videoDevices[listCamera1.SelectedIndex].MonikerString);
+                isDeviceChanged = true;
+            }
         }
 
         private void listCamera2_SelectedIndexChanged(object sender, EventArgs e)
         {
-            Log.WriteLine("listCamera2 = " + listCamera2.Text);
-            Settings.SetCamera2_InputPath(videoDevices[listCamera2.SelectedIndex].MonikerString);
-            isChanged = true;
+            if (!listCamera2.Text.Equals(Settings.Camera2_InputPath))
+            {
+                Log.WriteLine("listCamera2 = " + listCamera2.Text);
+                Settings.SetCamera2_InputPath(videoDevices[listCamera2.SelectedIndex].MonikerString);
+                isDeviceChanged = true;
+            }
         }
 
         private void listVideoFormat_SelectedIndexChanged(object sender, EventArgs e)
         {
             Log.WriteLine("listVideoFormat = " + listVideoFormat.Text);
             Settings.SetVideoOutputFormat(listVideoFormat.Text);
-            isChanged = true;
         }
 
         private void listBitRate_SelectedIndexChanged(object sender, EventArgs e)
         {
             Log.WriteLine("listBitRate = " + listBitRate.Text);
             Settings.SetVideoBitRate(listBitRate.Text);
-            isChanged = true;
         }
 
         private void listFrameRate_SelectedIndexChanged(object sender, EventArgs e)
         {
             Log.WriteLine("listFrameRate = " + listFrameRate.Text);
             Settings.SetVideoFrameRate(listFrameRate.Text);
-            isChanged = true;
         }
 
         private void button1_Click(object sender, EventArgs e)
         {
-            if (isChanged)
+            if (isDeviceChanged)
             {
-                //Settings.SetAudioInputPath(listAudioSource.Text);
-                //Settings.SetAudioChannel(GetAudioMode(listAudioChannel.SelectedIndex));
-                //Settings.SetVideoMixingMode(GetVideoMode(listVideoMixingMode.SelectedIndex));
-                //Settings.SetCamera1_InputPath(listCamera1.Text);
-                //Settings.SetCamera2_InputPath(listCamera2.Text);
-                //Settings.SetVideoOutputFormat(listVideoFormat.Text);
-                //Settings.SetBitRate(listBitRate.Text);
-                //Settings.SetFrameRate(listFrameRate.Text);
                 Settings.SaveSettings();
 
                 DialogResult = DialogResult.OK;

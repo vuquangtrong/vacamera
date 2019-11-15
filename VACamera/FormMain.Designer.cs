@@ -45,7 +45,6 @@ namespace VACamera
             this.timerFPS = new System.Windows.Forms.Timer(this.components);
             this.txtCamFps1 = new System.Windows.Forms.Label();
             this.txtCamFps2 = new System.Windows.Forms.Label();
-            this.timer1 = new System.Windows.Forms.Timer(this.components);
             this.signalRecord = new System.Windows.Forms.PictureBox();
             this.btnWriteDisk = new System.Windows.Forms.Button();
             this.btnReplay = new System.Windows.Forms.Button();
@@ -172,11 +171,6 @@ namespace VACamera
             this.txtCamFps2.Size = new System.Drawing.Size(71, 21);
             this.txtCamFps2.TabIndex = 5;
             this.txtCamFps2.Text = "00.00 fps";
-            // 
-            // timer1
-            // 
-            this.timer1.Interval = 1000;
-            this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
             // 
             // signalRecord
             // 
@@ -332,7 +326,6 @@ namespace VACamera
         private System.Windows.Forms.Timer timerFPS;
         private System.Windows.Forms.Label txtCamFps1;
         private System.Windows.Forms.Label txtCamFps2;
-        private System.Windows.Forms.Timer timer1;
         private System.Windows.Forms.PictureBox signalRecord;
     }
 }

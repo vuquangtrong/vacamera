@@ -135,7 +135,7 @@ namespace VACamera
             listVideoFormat.SelectedIndex = (int)Settings.VideoOutputFormat;
 
             // video bitrate
-            listBitRate.Items.Add(Settings.VideoBitRate.ToString());
+            listBitRate.Text = Settings.VideoBitRate.ToString();
 
             // video framerate
             listFrameRate.Text = Settings.VideoFrameRate.ToString();
@@ -165,7 +165,7 @@ namespace VACamera
 
         private void listVideoMixingMode_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (videoDevices.Count >= 2)
+            if (videoDevices.Count > 1)
             {
                 if (listVideoMixingMode.SelectedIndex != (int)Settings.VideoMixingMode)
                 {
@@ -189,6 +189,21 @@ namespace VACamera
                 Settings.SetCamera1_InputPath(videoDevices[listCamera1.SelectedIndex].MonikerString);
                 isDeviceChanged = true;
             }
+            // do not select same device
+            if (listCamera2.SelectedIndex == listCamera1.SelectedIndex)
+            {
+                if (videoDevices.Count > 1)
+                {
+                    for (var i = 0; i < videoDevices.Count; i++)
+                    {
+                        if (i != listCamera1.SelectedIndex)
+                        {
+                            listCamera2.SelectedIndex = i;
+                            break;
+                        }
+                    }
+                }
+            }
         }
 
         private void listCamera2_SelectedIndexChanged(object sender, EventArgs e)
@@ -198,6 +213,21 @@ namespace VACamera
                 Log.WriteLine("listCamera2 = " + listCamera2.Text);
                 Settings.SetCamera2_InputPath(videoDevices[listCamera2.SelectedIndex].MonikerString);
                 isDeviceChanged = true;
+            }
+            // do not select same device
+            if (listCamera1.SelectedIndex == listCamera2.SelectedIndex)
+            {
+                if (videoDevices.Count > 1)
+                {
+                    for (var i = 0; i < videoDevices.Count; i++)
+                    {
+                        if (i != listCamera2.SelectedIndex)
+                        {
+                            listCamera1.SelectedIndex = i;
+                            break;
+                        }
+                    }
+                }
             }
         }
 
@@ -223,8 +253,9 @@ namespace VACamera
         {
             if (isDeviceChanged)
             {
-                Settings.SaveSettings();
+                Log.WriteLine("isDeviceChanged!");
 
+                Settings.SaveSettings();
                 DialogResult = DialogResult.OK;
             }
             Close();

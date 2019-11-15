@@ -1,0 +1,32 @@
+1113_1700:
+	Accord 3.8.0
+	SharpDX: 4.0.1
+	VIDEO is OK, replay at correct speed of camera framerate
+	NO AUDIO
+
+1114_1450:
+	Accord 3.8.2a
+	SharpDX: 4.2.0
+	Video is slower/faster then camera framerate
+	AUDIO is OK
+
+1115_1300:
+	Accord 3.8.2a
+	SharpDX: 4.2.0
+	Video is slower/faster then camera framerate
+	AUDIO is OK
+	Fix crash
+	Update UI
+
+1115_2000:
+	Accord 3.8.0
+	SharpDX: 4.0.1
+	VIDEO is OK, replay at correct speed of camera framerate
+	NO AUDIO
+
+1115_2300:
+	Accord 3.8.0
+	SharpDX: 4.0.1
+	VIDEO is OK, replay at correct speed of camera framerate
+	NO AUDIO
+	Update DVD

@@ -197,7 +197,6 @@
             this.listBitRate.Name = "listBitRate";
             this.listBitRate.Size = new System.Drawing.Size(165, 29);
             this.listBitRate.TabIndex = 4;
-            this.listBitRate.Text = "3000000";
             this.listBitRate.SelectedIndexChanged += new System.EventHandler(this.listBitRate_SelectedIndexChanged);
             // 
             // label5

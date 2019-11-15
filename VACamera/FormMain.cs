@@ -1,4 +1,7 @@
-﻿using Accord.Audio;
+﻿#define HAS_AUDIO
+//#define ACCORD_382a
+
+using Accord.Audio;
 using Accord.DirectSound;
 using Accord.Video.DirectShow;
 using Accord.Video.FFMPEG;
@@ -42,7 +45,7 @@ namespace VACamera
         Rectangle textLine3 = new Rectangle(10, Settings.VideoHeight - 10 - 40, Settings.VideoWidth - 20, 40);
 
         Stopwatch stopWatchFPS = null;
-        Stopwatch stopWatchFrameDuration = null;
+        //Stopwatch videoRecordingTime = null;
 
         enum VideoRecordState
         {
@@ -51,7 +54,7 @@ namespace VACamera
             PAUSE
         }
         VideoRecordState videoRecordState = VideoRecordState.IDLE;
-        VideoFileWriter videoFileWriter = new VideoFileWriter();
+        VideoFileWriter videoFileWriter = null;
         static readonly Object syncRender = new Object();
 
         int actualFrameRate = 30; // default is 30, will be re-calculated by timerFps
@@ -165,15 +168,21 @@ namespace VACamera
 
                     audioDevice = new AudioCaptureDevice(audioDeviceInfo)
                     {
+#if ACCORD_382a
                         Format = SampleFormat.Format32BitIeeeFloat, // 32bit Float
                         // NumberOfChannels = 1, // current, Accord only supports Mono
+#else
+                        Format = SampleFormat.Format32Bit,
+#endif
                         SampleRate = settings.AudioSampleRate, // 44100 Hz
                         DesiredFrameSize = settings.AudioFrameSize // 40 Kb
                     };
                     Log.WriteLine("audioDevice.Format = " + audioDevice.Format.ToString());
                     Log.WriteLine("audioDevice.SampleRate = " + audioDevice.SampleRate);
                     Log.WriteLine("audioDevice.DesiredFrameSize = " + audioDevice.DesiredFrameSize);
+#if ACCORD_382a
                     Log.WriteLine("audioDevice.NumberOfChannels = " + audioDevice.NumberOfChannels);
+#endif
 
                     audioDevice.NewFrame += AudioDevice_NewFrame;
                     audioDevice.Start();
@@ -412,23 +421,27 @@ namespace VACamera
 
         private void AudioDevice_NewFrame(object sender, Accord.Audio.NewFrameEventArgs eventArgs)
         {
+#if HAS_AUDIO
             // MICROPHONE DOES REPORT SIGNAL DURATION
             //if (true) // debug
             //{
-            //    Log.WriteLine("Duration = " + eventArgs.Signal.Duration.ToString());
+            //    Log.WriteLine("Duration = " + eventArgs.Signal.Duration.Milliseconds);
             //    //Log.WriteLine("Length = " + eventArgs.Signal.Length);
             //    //Log.WriteLine("NumberOfChannels = " + eventArgs.Signal.NumberOfChannels);
             //    //Log.WriteLine("SampleRate = " + eventArgs.Signal.SampleRate);
             //    //Log.WriteLine("SampleFormat = " + eventArgs.Signal.SampleFormat.ToString());
             //}
-
             if (videoRecordState == VideoRecordState.RECORDING)
             {
                 lock (syncRender)
                 {
                     try
                     {
+#if ACCORD_382a
                         videoFileWriter.WriteAudioFrame(eventArgs.Signal);
+#else
+                        videoFileWriter.WriteAudioFrame(eventArgs.Signal.RawData);
+#endif
                     }
                     catch (Exception ex)
                     {
@@ -436,6 +449,7 @@ namespace VACamera
                     }
                 }
             }
+#endif
         }
 
         private void VideoDevice1_NewFrame(object sender, Accord.Video.NewFrameEventArgs eventArgs)
@@ -477,6 +491,15 @@ namespace VACamera
 
         private void RenderFrame(Accord.Video.NewFrameEventArgs eventArgs)
         {
+            //Log.WriteLine("Camera timestamp = " + eventArgs.CaptureFinished.ToString());
+            //TimeSpan timestamp = TimeSpan.Zero;
+
+            //if (videoRecordState == VideoRecordState.RECORDING)
+            //{
+            //    timestamp = videoRecordingTime.Elapsed;
+            //}
+            //Log.WriteLine("videoRecordingTime = " + timestamp.ToString());
+
             // render frame 1 directly from videoDevice1's thread, no need to clone Bitmap object
             //Log.WriteLine("render frame 1");
             try
@@ -566,19 +589,7 @@ namespace VACamera
                     {
                         // videoFrame is only used by videoDevice1's thread, no need to clone
                         //Log.WriteLine("write frame: start");
-                        if (stopWatchFrameDuration != null)
-                        {
-                            stopWatchFrameDuration.Stop();
-                            Log.WriteLine(stopWatchFrameDuration.Elapsed.ToString());
-
-                            stopWatchFrameDuration.Reset();
-                            stopWatchFrameDuration.Start();
-                        }
-                        else
-                        {
-                            stopWatchFrameDuration = new Stopwatch();
-                            stopWatchFrameDuration.Start();
-                        }
+                        //videoFileWriter.WriteVideoFrame(videoFrame, timestamp);
                         videoFileWriter.WriteVideoFrame(videoFrame);
                         //Log.WriteLine("write frame: done");
                     }
@@ -594,33 +605,43 @@ namespace VACamera
         {
             if (videoRecordState == VideoRecordState.IDLE)
             {
-                VideoCodec videoCodec = VideoCodec.Mpeg4;
+#if ACCORD_382a
+                VideoCodec videoCodec = VideoCodec.Mpeg4; /* VideoCodec.H264; */
+#else
+                VideoCodec videoCodec = VideoCodec.MPEG4;
+#endif
                 string videoExtension = ".mp4";
 
                 if (settings.VideoOutputFormat == Settings.VideoFormat.MPEG2)
                 {
+#if ACCORD_382a
                     videoCodec = VideoCodec.Mpeg2;
+#else
+                    videoCodec = VideoCodec.MPEG2;
+#endif
                     videoExtension = ".mpg";
                 }
 
                 outputFile = outputFolder + "\\" + sessionInfo.DateTime + videoExtension;
 
+#if ACCORD_382a
                 videoFileWriter = new VideoFileWriter();
                 videoFileWriter.BitRate = settings.VideoBitRate;
-                videoFileWriter.FrameRate = actualFrameRate; /* settings.VideoFrameRate; */
+                videoFileWriter.FrameRate = actualFrameRate; /*  new Rational(1000, 1000 / settings.VideoFrameRate);*/
                 videoFileWriter.Width = Settings.VideoWidth;
                 videoFileWriter.Height = Settings.VideoHeight;
                 videoFileWriter.VideoCodec = videoCodec;
 
                 // advanced settings
-                //videoFileWriter.VideoOptions["crf"] = "18"; // visually lossless
-                videoFileWriter.VideoOptions["preset"] = "veryfast";
-                //videoFileWriter.VideoOptions["tune"] = "zerolatency";
+                videoFileWriter.VideoOptions["crf"] = "18"; // visually lossless
+                videoFileWriter.VideoOptions["preset"] = "ultrafast"; /*  "veryfast"; */
+                videoFileWriter.VideoOptions["tune"] = "zerolatency";
+                videoFileWriter.VideoOptions["x264opts"] = "no-mbtree:sliced-threads:sync-lookahead=0";
 
                 Log.WriteLine(">>> videoFileWriter.BitRate = " + videoFileWriter.BitRate);
                 Log.WriteLine(">>> videoFileWriter.FrameRate = " + videoFileWriter.FrameRate);
                 Log.WriteLine(">>> videoFileWriter.VideoCodec = " + videoFileWriter.VideoCodec);
-
+#if HAS_AUDIO
                 if (audioDevice != null)
                 {
                     Log.WriteLine("RECORD HAS AUDIO");
@@ -636,11 +657,42 @@ namespace VACamera
                     Log.WriteLine(">>> videoFileWriter.AudioLayout = " + videoFileWriter.AudioLayout);
                     Log.WriteLine(">>> videoFileWriter.SampleRate = " + videoFileWriter.SampleRate);
                 }
-
+#endif
                 // open file to write
                 videoFileWriter.Open(outputFile);
-
+#else
+                videoFileWriter = new VideoFileWriter();
+#if HAS_AUDIO
+                videoFileWriter.Open(
+                    outputFile,
+                    Settings.VideoWidth,
+                    Settings.VideoHeight,
+                    actualFrameRate,
+                    videoCodec,
+                    settings.VideoBitRate,
+                    AudioCodec.MP3,
+                    settings.AudioBitRate,
+                    audioDevice.SampleRate,
+                    1 /* settings.AudioChannel */
+                );
+                Log.WriteLine("HAS AUDIO");
+#else
+                videoFileWriter.Open(
+                    outputFile,
+                    Settings.VideoWidth,
+                    Settings.VideoHeight,
+                    actualFrameRate,
+                    videoCodec,
+                    settings.VideoBitRate
+                );
+#endif
+#endif
                 timerRecord.Start();
+                //if (videoRecordingTime == null)
+                //{
+                //    videoRecordingTime = new Stopwatch();
+                //    videoRecordingTime.Start();
+                //}
                 videoRecordState = VideoRecordState.RECORDING;
                 Log.WriteLine(">>> START recording");
 
@@ -692,6 +744,8 @@ namespace VACamera
                 }
 
                 timerRecord.Stop();
+                //videoRecordingTime.Stop();
+                //videoRecordingTime = null;
                 Log.WriteLine(">>> STOP recording");
             }
         }
@@ -720,6 +774,8 @@ namespace VACamera
                 }
             }
 
+            Show();
+
             if (videoDevice1 != null)
             {
                 btnRecord.Enabled = true;
@@ -733,8 +789,6 @@ namespace VACamera
 
             //InitDevices(); // this process is slow
             ResumePreview();
-
-            Show();
         }
 
         private void settingsToolStripMenuItem_Click(object sender, EventArgs e)

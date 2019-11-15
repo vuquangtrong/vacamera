@@ -54,6 +54,7 @@
             this.btnWrite1.TabIndex = 0;
             this.btnWrite1.Text = "&Ghi đĩa chính";
             this.btnWrite1.UseVisualStyleBackColor = true;
+            this.btnWrite1.Visible = false;
             this.btnWrite1.Click += new System.EventHandler(this.btnWrite1_Click);
             // 
             // btnCancel
@@ -166,6 +167,7 @@
             this.btnWrite2.TabIndex = 0;
             this.btnWrite2.Text = "&Ghi đĩa phụ";
             this.btnWrite2.UseVisualStyleBackColor = true;
+            this.btnWrite2.Visible = false;
             this.btnWrite2.Click += new System.EventHandler(this.btnWrite2_Click);
             // 
             // label3
@@ -185,7 +187,6 @@
             this.btnWriteAll.TabIndex = 5;
             this.btnWriteAll.Text = "&Ghi đĩa";
             this.btnWriteAll.UseVisualStyleBackColor = true;
-            this.btnWriteAll.Visible = false;
             this.btnWriteAll.Click += new System.EventHandler(this.btnWriteAll_Click);
             // 
             // FormDvdWriter

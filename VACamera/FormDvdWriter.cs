@@ -27,6 +27,8 @@ namespace VACamera
         string _sessionName = "";
         string _filePath = "";
 
+        static readonly Object syncData = new Object();
+
         public FormDvdWriter(string sessionName, string filePath)
         {
             _sessionName = sessionName;
@@ -169,9 +171,9 @@ namespace VACamera
                 var discRecorder = (IDiscRecorder2)listDrive1.Items[listDrive1.SelectedIndex];
                 _burnData1.uniqueRecorderId = discRecorder.ActiveDiscRecorder;
 
+                Log.WriteLine("START Burning DISK 1");
                 backgroundBurnWorker1.RunWorkerAsync(_burnData1);
             }
-
         }
 
         private void btnWrite2_Click(object sender, EventArgs e)
@@ -194,7 +196,8 @@ namespace VACamera
                 var discRecorder = (IDiscRecorder2)listDrive2.Items[listDrive2.SelectedIndex];
                 _burnData2.uniqueRecorderId = discRecorder.ActiveDiscRecorder;
 
-                backgroundBurnWorker2.RunWorkerAsync(_burnData1);
+                Log.WriteLine("START Burning DISK 2");
+                backgroundBurnWorker2.RunWorkerAsync(_burnData2);
             }
 
         }
@@ -236,12 +239,12 @@ namespace VACamera
         {
             if (btnWrite1.Enabled)
             {
-                btnWrite1.PerformClick();
+                btnWrite1_Click(btnWrite1, EventArgs.Empty);
             }
 
             if (btnWrite2.Enabled)
             {
-                btnWrite2.PerformClick();
+                btnWrite2_Click(btnWrite2, EventArgs.Empty);
             }
         }
 
@@ -256,7 +259,7 @@ namespace VACamera
                 var burnData = (BurnData)e.Argument;
                 try
                 {
-                    Log.WriteLine("uniqueRecorderId = " + burnData.uniqueRecorderId);
+                    Log.WriteLine("DISK 1 uniqueRecorderId = " + burnData.uniqueRecorderId);
                     discRecorder.InitializeDiscRecorder(burnData.uniqueRecorderId);
                 }
                 catch (Exception ex)
@@ -295,7 +298,7 @@ namespace VACamera
                 }
 
                 // add the Update event handler
-                discFormatData.Update += discFormatData2_Update;
+                discFormatData.Update += discFormatData1_Update;
 
                 // Write the data here
                 try
@@ -317,7 +320,7 @@ namespace VACamera
                 }
 
                 // remove the Update event handler
-                discFormatData.Update -= discFormatData2_Update;
+                discFormatData.Update -= discFormatData1_Update;
 
                 if (_ejectMedia)
                 {
@@ -354,7 +357,7 @@ namespace VACamera
                 var burnData = (BurnData)e.Argument;
                 try
                 {
-                    Log.WriteLine("uniqueRecorderId = " + burnData.uniqueRecorderId);
+                    Log.WriteLine("DISK 2 uniqueRecorderId = " + burnData.uniqueRecorderId);
                     discRecorder.InitializeDiscRecorder(burnData.uniqueRecorderId);
                 }
                 catch (Exception ex)
@@ -677,22 +680,26 @@ namespace VACamera
                 // Get the image root
                 IFsiDirectoryItem rootItem = fileSystemImage.Root;
 
-                // Add Files and Directories to File System Image
-                var fileItem = new FileItem(_filePath);
-                IMediaItem mediaItem = fileItem;
-                mediaItem.AddToFileSystem(rootItem);
+                // Burn disks in parallel could make the file in burning is lock
+                lock (syncData)
+                {
+                    // Add Files and Directories to File System Image
+                    var fileItem = new FileItem(_filePath);
+                    IMediaItem mediaItem = fileItem;
+                    mediaItem.AddToFileSystem(rootItem);
 
-                // Make data stream
-                try
-                {
-                    dataStream = fileSystemImage.CreateResultImage().ImageStream;
-                }
-                catch (Exception ex)
-                {
-                    dataStream = null;
-                    MessageBox.Show("Ổ đĩa bị khóa hoặc có lỗi trong quá trình định dạng đĩa");
-                    Log.WriteLine(ex.ToString());
-                    return false;
+                    // Make data stream
+                    try
+                    {
+                        dataStream = fileSystemImage.CreateResultImage().ImageStream;
+                    }
+                    catch (Exception ex)
+                    {
+                        dataStream = null;
+                        MessageBox.Show("Ổ đĩa bị khóa hoặc có lỗi trong quá trình định dạng đĩa");
+                        Log.WriteLine(ex.ToString());
+                        return false;
+                    }
                 }
             }
             catch (Exception ex)
@@ -991,7 +998,7 @@ namespace VACamera
         private int CountNewDisk()
         {
             int count = 0;
-            foreach (MsftDiscRecorder2 discRecorder in listDrive2.Items)
+            foreach (MsftDiscRecorder2 discRecorder in listDrive1.Items)
             {
                 if (IsMediaWritable(discRecorder))
                 {

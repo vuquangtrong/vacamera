@@ -896,12 +896,16 @@ namespace VACamera
                 DialogResult result = formDvdWriter.ShowDialog();
                 if (result == DialogResult.Yes)
                 {
-                    newSessionToolStripMenuItem_Click(new object(), new EventArgs());
+                    newSessionToolStripMenuItem_Click(newSessionToolStripMenuItem, EventArgs.Empty);
                 }
                 else if (result == DialogResult.No)
                 {
                     MessageBox.Show("Kết thúc phiên làm việc và dừng chương trình!");
                     Close();
+                }
+                else if (result == DialogResult.Cancel)
+                {
+                    MessageBox.Show("Vui lòng tạo phiên làm việc mới!");
                 }
             }
         }

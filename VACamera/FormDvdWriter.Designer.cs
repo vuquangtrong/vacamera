@@ -44,22 +44,26 @@
             this.btnWrite2 = new System.Windows.Forms.Button();
             this.label3 = new System.Windows.Forms.Label();
             this.btnWriteAll = new System.Windows.Forms.Button();
+            this.txtFileSize = new System.Windows.Forms.Label();
+            this.txtTimeLeft2 = new System.Windows.Forms.Label();
+            this.txtTimeLeft1 = new System.Windows.Forms.Label();
+            this.label7 = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // btnWrite1
             // 
-            this.btnWrite1.Location = new System.Drawing.Point(364, 36);
+            this.btnWrite1.Location = new System.Drawing.Point(193, 221);
             this.btnWrite1.Name = "btnWrite1";
-            this.btnWrite1.Size = new System.Drawing.Size(120, 40);
+            this.btnWrite1.Size = new System.Drawing.Size(40, 40);
             this.btnWrite1.TabIndex = 0;
-            this.btnWrite1.Text = "&Ghi đĩa chính";
+            this.btnWrite1.Text = "1";
             this.btnWrite1.UseVisualStyleBackColor = true;
             this.btnWrite1.Visible = false;
             this.btnWrite1.Click += new System.EventHandler(this.btnWrite1_Click);
             // 
             // btnCancel
             // 
-            this.btnCancel.Location = new System.Drawing.Point(364, 269);
+            this.btnCancel.Location = new System.Drawing.Point(364, 221);
             this.btnCancel.Name = "btnCancel";
             this.btnCancel.Size = new System.Drawing.Size(120, 40);
             this.btnCancel.TabIndex = 0;
@@ -70,41 +74,42 @@
             // listDrive1
             // 
             this.listDrive1.FormattingEnabled = true;
-            this.listDrive1.Location = new System.Drawing.Point(119, 43);
+            this.listDrive1.Location = new System.Drawing.Point(147, 228);
             this.listDrive1.Name = "listDrive1";
-            this.listDrive1.Size = new System.Drawing.Size(239, 29);
+            this.listDrive1.Size = new System.Drawing.Size(40, 29);
             this.listDrive1.TabIndex = 1;
+            this.listDrive1.Visible = false;
             this.listDrive1.SelectedIndexChanged += new System.EventHandler(this.listDrive1_SelectedIndexChanged);
             this.listDrive1.Format += new System.Windows.Forms.ListControlConvertEventHandler(this.listDrive_Format);
             // 
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(12, 46);
+            this.label1.Location = new System.Drawing.Point(14, 82);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(92, 21);
+            this.label1.Size = new System.Drawing.Size(58, 21);
             this.label1.TabIndex = 2;
-            this.label1.Text = "Ổ đĩa chính:";
+            this.label1.Text = "DVD 1:";
             // 
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(12, 147);
+            this.label2.Location = new System.Drawing.Point(14, 142);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(96, 21);
+            this.label2.Size = new System.Drawing.Size(58, 21);
             this.label2.TabIndex = 2;
-            this.label2.Text = "Ổ dự phòng:";
+            this.label2.Text = "DVD 2:";
             // 
             // progressBar1
             // 
-            this.progressBar1.Location = new System.Drawing.Point(16, 100);
+            this.progressBar1.Location = new System.Drawing.Point(16, 108);
             this.progressBar1.Name = "progressBar1";
             this.progressBar1.Size = new System.Drawing.Size(468, 23);
             this.progressBar1.TabIndex = 3;
             // 
             // progressBar2
             // 
-            this.progressBar2.Location = new System.Drawing.Point(16, 204);
+            this.progressBar2.Location = new System.Drawing.Point(16, 169);
             this.progressBar2.Name = "progressBar2";
             this.progressBar2.Size = new System.Drawing.Size(468, 23);
             this.progressBar2.TabIndex = 3;
@@ -112,7 +117,7 @@
             // txtFilename
             // 
             this.txtFilename.AutoSize = true;
-            this.txtFilename.Location = new System.Drawing.Point(100, 9);
+            this.txtFilename.Location = new System.Drawing.Point(114, 9);
             this.txtFilename.Name = "txtFilename";
             this.txtFilename.Size = new System.Drawing.Size(73, 21);
             this.txtFilename.TabIndex = 2;
@@ -121,28 +126,29 @@
             // txtStatus1
             // 
             this.txtStatus1.AutoSize = true;
-            this.txtStatus1.Location = new System.Drawing.Point(12, 76);
+            this.txtStatus1.Location = new System.Drawing.Point(78, 82);
             this.txtStatus1.Name = "txtStatus1";
-            this.txtStatus1.Size = new System.Drawing.Size(46, 21);
+            this.txtStatus1.Size = new System.Drawing.Size(73, 21);
             this.txtStatus1.TabIndex = 2;
-            this.txtStatus1.Text = "Xong";
+            this.txtStatus1.Text = "DVD-RW";
             // 
             // txtStatus2
             // 
             this.txtStatus2.AutoSize = true;
-            this.txtStatus2.Location = new System.Drawing.Point(12, 180);
+            this.txtStatus2.Location = new System.Drawing.Point(78, 142);
             this.txtStatus2.Name = "txtStatus2";
-            this.txtStatus2.Size = new System.Drawing.Size(46, 21);
+            this.txtStatus2.Size = new System.Drawing.Size(73, 21);
             this.txtStatus2.TabIndex = 2;
-            this.txtStatus2.Text = "Xong";
+            this.txtStatus2.Text = "DVD-RW";
             // 
             // listDrive2
             // 
             this.listDrive2.FormattingEnabled = true;
-            this.listDrive2.Location = new System.Drawing.Point(119, 144);
+            this.listDrive2.Location = new System.Drawing.Point(239, 228);
             this.listDrive2.Name = "listDrive2";
-            this.listDrive2.Size = new System.Drawing.Size(239, 29);
+            this.listDrive2.Size = new System.Drawing.Size(40, 29);
             this.listDrive2.TabIndex = 1;
+            this.listDrive2.Visible = false;
             this.listDrive2.SelectedIndexChanged += new System.EventHandler(this.listDrive2_SelectedIndexChanged);
             this.listDrive2.Format += new System.Windows.Forms.ListControlConvertEventHandler(this.listDrive_Format);
             // 
@@ -161,11 +167,11 @@
             // btnWrite2
             // 
             this.btnWrite2.Enabled = false;
-            this.btnWrite2.Location = new System.Drawing.Point(364, 137);
+            this.btnWrite2.Location = new System.Drawing.Point(285, 221);
             this.btnWrite2.Name = "btnWrite2";
-            this.btnWrite2.Size = new System.Drawing.Size(120, 40);
+            this.btnWrite2.Size = new System.Drawing.Size(40, 40);
             this.btnWrite2.TabIndex = 0;
-            this.btnWrite2.Text = "&Ghi đĩa phụ";
+            this.btnWrite2.Text = "2";
             this.btnWrite2.UseVisualStyleBackColor = true;
             this.btnWrite2.Visible = false;
             this.btnWrite2.Click += new System.EventHandler(this.btnWrite2_Click);
@@ -181,7 +187,7 @@
             // 
             // btnWriteAll
             // 
-            this.btnWriteAll.Location = new System.Drawing.Point(16, 269);
+            this.btnWriteAll.Location = new System.Drawing.Point(16, 221);
             this.btnWriteAll.Name = "btnWriteAll";
             this.btnWriteAll.Size = new System.Drawing.Size(120, 40);
             this.btnWriteAll.TabIndex = 5;
@@ -189,16 +195,60 @@
             this.btnWriteAll.UseVisualStyleBackColor = true;
             this.btnWriteAll.Click += new System.EventHandler(this.btnWriteAll_Click);
             // 
+            // txtFileSize
+            // 
+            this.txtFileSize.AutoSize = true;
+            this.txtFileSize.Location = new System.Drawing.Point(114, 36);
+            this.txtFileSize.Name = "txtFileSize";
+            this.txtFileSize.Size = new System.Drawing.Size(46, 21);
+            this.txtFileSize.TabIndex = 2;
+            this.txtFileSize.Text = "0 MB";
+            // 
+            // txtTimeLeft2
+            // 
+            this.txtTimeLeft2.AutoSize = true;
+            this.txtTimeLeft2.Location = new System.Drawing.Point(435, 142);
+            this.txtTimeLeft2.Name = "txtTimeLeft2";
+            this.txtTimeLeft2.Size = new System.Drawing.Size(49, 21);
+            this.txtTimeLeft2.TabIndex = 2;
+            this.txtTimeLeft2.Text = "00:00";
+            this.txtTimeLeft2.TextAlign = System.Drawing.ContentAlignment.TopRight;
+            this.txtTimeLeft2.Visible = false;
+            // 
+            // txtTimeLeft1
+            // 
+            this.txtTimeLeft1.AutoSize = true;
+            this.txtTimeLeft1.Location = new System.Drawing.Point(435, 82);
+            this.txtTimeLeft1.Name = "txtTimeLeft1";
+            this.txtTimeLeft1.Size = new System.Drawing.Size(49, 21);
+            this.txtTimeLeft1.TabIndex = 2;
+            this.txtTimeLeft1.Text = "00:00";
+            this.txtTimeLeft1.TextAlign = System.Drawing.ContentAlignment.TopRight;
+            this.txtTimeLeft1.Visible = false;
+            // 
+            // label7
+            // 
+            this.label7.AutoSize = true;
+            this.label7.Location = new System.Drawing.Point(12, 36);
+            this.label7.Name = "label7";
+            this.label7.Size = new System.Drawing.Size(96, 21);
+            this.label7.TabIndex = 4;
+            this.label7.Text = "Dung lượng:";
+            // 
             // FormDvdWriter
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
-            this.ClientSize = new System.Drawing.Size(496, 321);
+            this.ClientSize = new System.Drawing.Size(496, 281);
             this.ControlBox = false;
             this.Controls.Add(this.btnWriteAll);
+            this.Controls.Add(this.label7);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.progressBar2);
             this.Controls.Add(this.progressBar1);
+            this.Controls.Add(this.txtFileSize);
             this.Controls.Add(this.txtFilename);
+            this.Controls.Add(this.txtTimeLeft1);
+            this.Controls.Add(this.txtTimeLeft2);
             this.Controls.Add(this.txtStatus2);
             this.Controls.Add(this.txtStatus1);
             this.Controls.Add(this.label2);
@@ -211,8 +261,8 @@
             this.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
-            this.MaximumSize = new System.Drawing.Size(512, 360);
-            this.MinimumSize = new System.Drawing.Size(512, 360);
+            this.MaximumSize = new System.Drawing.Size(512, 320);
+            this.MinimumSize = new System.Drawing.Size(512, 320);
             this.Name = "FormDvdWriter";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "Ghi đĩa DVD";
@@ -241,5 +291,9 @@
         private System.Windows.Forms.Button btnWrite2;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.Button btnWriteAll;
+        private System.Windows.Forms.Label txtFileSize;
+        private System.Windows.Forms.Label txtTimeLeft2;
+        private System.Windows.Forms.Label txtTimeLeft1;
+        private System.Windows.Forms.Label label7;
     }
 }

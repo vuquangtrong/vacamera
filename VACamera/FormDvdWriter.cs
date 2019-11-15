@@ -41,6 +41,12 @@ namespace VACamera
         {
             txtFilename.Text = Path.GetFileName(_filePath);
 
+            long filesize = (new FileInfo(_filePath)).Length;
+
+            txtFileSize.Text = (filesize < 1000000000 ?
+                        string.Format("{0} MB", filesize / 1000000) :
+                        string.Format("{0:F2} GB", (float)filesize / 1000000000.0));
+
             // Determine the current recording devices
             MsftDiscMaster2 discMaster = null;
             try

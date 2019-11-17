@@ -30,3 +30,9 @@
 	VIDEO is OK, replay at correct speed of camera framerate
 	NO AUDIO
 	Update DVD
+
+1115_2050:
+	Accord 3.3.0
+	SharpDX: 2.6.0
+	VIDEO is OK
+	AUDIO is OK

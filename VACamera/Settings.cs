@@ -31,9 +31,9 @@ namespace VACamera
 
         // attributes
         public AudioMode AudioChannel { get; private set; } /* Stereo */
-        public int AudioBitRate { get; private set; } /* 160 kbps */
+        public int AudioBitRate { get; private set; } /* 320 kbps */
         public int AudioSampleRate { get; private set; } /* 44100 Hz */
-        public int AudioFrameSize { get; private set; } /* 40 Kb*/
+        public int AudioFrameSize { get; private set; } /* 8Kb */
         public string AudioInputPath { get; private set; } /* Default */
         public VideoMode VideoMixingMode { get; private set; } /* Single */
         public string Camera1_InputPath { get; private set; } /* Default */
@@ -99,7 +99,7 @@ namespace VACamera
         {
             if (rate == null || rate.Equals(""))
             {
-                AudioBitRate = 160 * 1000;
+                AudioBitRate = 320 * 1000;
             }
             else
             {
@@ -109,7 +109,7 @@ namespace VACamera
                 }
                 catch (Exception ex)
                 {
-                    AudioBitRate = 160 * 1000;
+                    AudioBitRate = 320 * 1000;
                     Log.WriteLine(ex.ToString());
                 }
             }
@@ -153,7 +153,7 @@ namespace VACamera
         {
             if (size == null || size.Equals(""))
             {
-                AudioFrameSize = 10 * 4 * 1024;
+                AudioFrameSize = 8 * 1024;
             }
             else
             {
@@ -163,7 +163,7 @@ namespace VACamera
                 }
                 catch (Exception ex)
                 {
-                    AudioFrameSize = 10 * 4 * 1024;
+                    AudioFrameSize = 8 * 1024;
                     Log.WriteLine(ex.ToString());
                 }
             }

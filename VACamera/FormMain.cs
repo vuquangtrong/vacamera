@@ -10,6 +10,7 @@ using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace VACamera
@@ -28,6 +29,11 @@ namespace VACamera
         FilterInfoCollection videoDevices;
         VideoCaptureDevice videoDevice1 = null;
         VideoCaptureDevice videoDevice2 = null;
+        bool isPreviewing = true;
+
+        Bitmap frame1 = null;
+        static readonly Object syncFrame1 = new Object();
+        bool isFrame1_Rendering = false;
 
         Bitmap frame2 = null;
         static readonly Object syncFrame2 = new Object();
@@ -42,7 +48,7 @@ namespace VACamera
         Rectangle textLine3 = new Rectangle(10, Settings.VideoHeight - 10 - 40, Settings.VideoWidth - 20, 40);
 
         Stopwatch stopWatchFPS = null;
-        //Stopwatch videoRecordingTime = null;
+        Thread videoRenderThread;
 
         enum VideoRecordState
         {
@@ -53,8 +59,6 @@ namespace VACamera
         VideoRecordState videoRecordState = VideoRecordState.IDLE;
         VideoFileWriter videoFileWriter = null;
         static readonly Object syncRender = new Object();
-
-        int actualFrameRate = 30; // default is 30, will be re-calculated by timerFps
         int recordTime = 0;
 
         public FormMain()
@@ -116,6 +120,10 @@ namespace VACamera
             graphics.CompositingQuality = CompositingQuality.HighSpeed;
             graphics.SmoothingMode = SmoothingMode.HighSpeed;
 
+            // init render thread
+            videoRenderThread = new Thread(VideoRenderWorker);
+            videoRenderThread.Start();
+
             // start devices at startup
             InitDevices();
         }
@@ -124,6 +132,33 @@ namespace VACamera
         {
             StopRecording();
             StopDevices();
+            StopRender();
+        }
+
+        private void VideoRenderWorker()
+        {
+            while (true)
+            {
+                Thread.Sleep(settings.VideoFrameDuration);
+                if (isPreviewing)
+                {
+                    Task.Factory.StartNew(() =>
+                    {
+                        RenderVideoFrame();
+                    });
+                }
+            }
+        }
+
+        private void StopRender()
+        {
+            if (videoRenderThread != null)
+            {
+                if (videoRenderThread.IsAlive)
+                {
+                    videoRenderThread.Abort();
+                }
+            }
         }
 
         private void InitDevices()
@@ -178,6 +213,7 @@ namespace VACamera
                     // setup audio mixer as main audio output device
                     audioDevice = new AudioSourceMixer(listAudioDevices);
                     audioDevice.NewFrame += AudioDevice_NewFrame;
+                    audioDevice.Channels = (settings.AudioChannel == Settings.AudioMode.Mono ? 1 : 2);
                     audioDevice.Start();
 
                     Log.WriteLine(">>> START audioDevice: " + audioDeviceInfo.Description + "|" + audioDeviceInfo.Guid.ToString());
@@ -269,6 +305,8 @@ namespace VACamera
 
                 // reset record time
                 UpdateRecordTime(0);
+
+                isPreviewing = true;
             }
 
             // monitor actual framerate
@@ -292,6 +330,7 @@ namespace VACamera
             {
                 videoDevice2.NewFrame -= VideoDevice2_NewFrame;
             }
+            isPreviewing = false;
         }
 
         private void ResumePreview()
@@ -315,6 +354,7 @@ namespace VACamera
                     videoDevice2.NewFrame += VideoDevice2_NewFrame;
                 }
             }
+            isPreviewing = true;
         }
 
         private void StopDevices()
@@ -406,11 +446,18 @@ namespace VACamera
 
         private void UpdateLiveImage(PictureBox pictureBox, Bitmap bitmap)
         {
-            if (pictureBox.Image != null)
+            try
             {
-                pictureBox.Image.Dispose();
+                if (pictureBox.Image != null)
+                {
+                    pictureBox.Image.Dispose();
+                }
+                pictureBox.Image = bitmap;
             }
-            pictureBox.Image = bitmap;
+            catch (Exception ex)
+            {
+                Log.WriteLine(ex.ToString());
+            }
         }
 
         private void AudioDevice_NewFrame(object sender, Accord.Audio.NewFrameEventArgs eventArgs)
@@ -451,7 +498,33 @@ namespace VACamera
             //    Log.WriteLine("FrameIndex = " + eventArgs.FrameIndex);
             //}
 
-            RenderFrame(eventArgs);
+            bool freeToGo = false;
+            lock (syncFrame1)
+            {
+                freeToGo = !isFrame1_Rendering;
+            }
+            if (freeToGo)
+            {
+                lock (syncFrame1)
+                {
+                    try
+                    {
+                        if (frame1 != null)
+                        {
+                            frame1.Dispose();
+                        }
+                        frame1 = (Bitmap)eventArgs.Frame.Clone();
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.WriteLine(ex.ToString());
+                    }
+                }
+            }
+            else
+            {
+                //Log.WriteLine("skip frame 1");
+            }
         }
 
         private void VideoDevice2_NewFrame(object sender, Accord.Video.NewFrameEventArgs eventArgs)
@@ -465,11 +538,18 @@ namespace VACamera
             {
                 lock (syncFrame2)
                 {
-                    if (frame2 != null)
+                    try
                     {
-                        frame2.Dispose();
+                        if (frame2 != null)
+                        {
+                            frame2.Dispose();
+                        }
+                        frame2 = (Bitmap)eventArgs.Frame.Clone();
                     }
-                    frame2 = (Bitmap)eventArgs.Frame.Clone();
+                    catch (Exception ex)
+                    {
+                        Log.WriteLine(ex.ToString());
+                    }
                 }
             }
             else
@@ -478,32 +558,39 @@ namespace VACamera
             }
         }
 
-        private void RenderFrame(Accord.Video.NewFrameEventArgs eventArgs)
+        private void RenderVideoFrame()
         {
-            //Log.WriteLine("Camera timestamp = " + eventArgs.CaptureFinished.ToString());
-            //TimeSpan timestamp = TimeSpan.Zero;
-
-            //if (videoRecordState == VideoRecordState.RECORDING)
-            //{
-            //    timestamp = videoRecordingTime.Elapsed;
-            //}
-            //Log.WriteLine("videoRecordingTime = " + timestamp.ToString());
-
-            // render frame 1 directly from videoDevice1's thread, no need to clone Bitmap object
-            //Log.WriteLine("render frame 1");
-            try
+            // render frame1 which comes from videoDevive1's thread, we need to lock it
+            lock (syncFrame1)
             {
-                //Log.WriteLine("render frame 1: start");
-                graphics.DrawImage(eventArgs.Frame,
-                    new Rectangle(settings.Frame1_X, settings.Frame1_Y, settings.Frame1_Width, settings.Frame1_Height),
-                    new Rectangle(0, 0, eventArgs.Frame.Width, eventArgs.Frame.Height),
-                    GraphicsUnit.Pixel);
-                //Log.WriteLine("render frame 1: done");
+                isFrame1_Rendering = true; // this notify videoDevice1's thread to drop new frame 
+                                           // if new frame comes while old frame is being processed
             }
-            catch (Exception ex)
+            if (frame1 != null)
             {
-                Log.WriteLine(ex.ToString());
-                return;
+                //Log.WriteLine("render frame 1");
+                try
+                {
+                    //Log.WriteLine("render frame 1: start");
+                    graphics.DrawImage(frame1,
+                        new Rectangle(settings.Frame1_X, settings.Frame1_Y, settings.Frame1_Width, settings.Frame1_Height),
+                        new Rectangle(0, 0, frame1.Width, frame1.Height),
+                        GraphicsUnit.Pixel);
+                    //Log.WriteLine("render frame 1: done");
+                }
+                catch (Exception ex)
+                {
+                    Log.WriteLine(ex.ToString());
+                    lock (syncFrame1)
+                    {
+                        isFrame1_Rendering = false;
+                    }
+                    return;
+                }
+            }
+            lock (syncFrame1)
+            {
+                isFrame1_Rendering = false;
             }
 
             if (settings.VideoMixingMode != Settings.VideoMode.Single)
@@ -555,7 +642,7 @@ namespace VACamera
                 graphics.DrawString(sessionInfo.Name4, textFont, Brushes.Red, textLine3);
                 // BottomRight: Name 5 and DateTime
                 graphics.DrawString(sessionInfo.Name5, textFont, Brushes.Red, textLine2, textDirectionRTL);
-                graphics.DrawString(DateTime.Now.ToString("HH:mm:ss dd/MM/yyyy"), textFont, Brushes.Red, textLine3, textDirectionRTL);
+                graphics.DrawString(DateTime.Now.ToString("HH:mm:ss.fff dd/MM/yyyy"), textFont, Brushes.Red, textLine3, textDirectionRTL);
                 //Log.WriteLine("render text: done");
             }
             catch (Exception ex)
@@ -565,7 +652,10 @@ namespace VACamera
 
             // show preview in UI thread, need to clone it, and then MUST invoke the UI thread
             //Log.WriteLine("update preview: start");
-            UpdateLiveImageInvoker(pictureFrame, (Bitmap)videoFrame.Clone());
+            if (pictureFrame != null)
+            {
+                UpdateLiveImageInvoker(pictureFrame, (Bitmap)videoFrame.Clone());
+            }
             //Log.WriteLine("update preview: done");
 
             if (videoRecordState == VideoRecordState.RECORDING)
@@ -612,7 +702,7 @@ namespace VACamera
 
                     videoFileWriter.Open(
                         outputFile,
-                        Settings.VideoWidth, Settings.VideoHeight, actualFrameRate, videoCodec, settings.VideoBitRate,
+                        Settings.VideoWidth, Settings.VideoHeight, settings.VideoFrameRate, videoCodec, settings.VideoBitRate,
                         AudioCodec.MP3, settings.AudioBitRate, audioDevice.SampleRate, audioDevice.Channels
                     );
                 }
@@ -620,7 +710,7 @@ namespace VACamera
                 {
                     videoFileWriter.Open(
                         outputFile,
-                        Settings.VideoWidth, Settings.VideoHeight, actualFrameRate, videoCodec, settings.VideoBitRate
+                        Settings.VideoWidth, Settings.VideoHeight, settings.VideoFrameRate, videoCodec, settings.VideoBitRate
                     );
                 }
 
@@ -684,6 +774,32 @@ namespace VACamera
                 //videoRecordingTime.Stop();
                 //videoRecordingTime = null;
                 Log.WriteLine(">>> STOP recording");
+            }
+        }
+
+        private void UpdateRecordTime(int start = -1)
+        {
+            if (start >= 0)
+            {
+                recordTime = start;
+            }
+
+            TimeSpan timeRun = TimeSpan.FromSeconds(recordTime);
+            txtTimeRun.Text = timeRun.ToString("hh':'mm':'ss");
+
+            TimeSpan timeLeft = TimeSpan.FromSeconds(sessionInfo.MaxTime - recordTime);
+            txtTimeLeft.Text = timeLeft.ToString("hh':'mm':'ss");
+
+            if (videoRecordState == VideoRecordState.RECORDING)
+            {
+                if (recordTime % 2 == 0)
+                {
+                    signalRecord.BackgroundImage = global::VACamera.Properties.Resources.rec_on;
+                }
+                else
+                {
+                    signalRecord.BackgroundImage = global::VACamera.Properties.Resources.rec_off;
+                }
             }
         }
 
@@ -853,32 +969,6 @@ namespace VACamera
             UpdateRecordTime();
         }
 
-        private void UpdateRecordTime(int start = -1)
-        {
-            if (start >= 0)
-            {
-                recordTime = start;
-            }
-
-            TimeSpan timeRun = TimeSpan.FromSeconds(recordTime);
-            txtTimeRun.Text = timeRun.ToString("hh':'mm':'ss");
-
-            TimeSpan timeLeft = TimeSpan.FromSeconds(sessionInfo.MaxTime - recordTime);
-            txtTimeLeft.Text = timeLeft.ToString("hh':'mm':'ss");
-
-            if (videoRecordState == VideoRecordState.RECORDING)
-            {
-                if (recordTime % 2 == 0)
-                {
-                    signalRecord.BackgroundImage = global::VACamera.Properties.Resources.rec_on;
-                }
-                else
-                {
-                    signalRecord.BackgroundImage = global::VACamera.Properties.Resources.rec_off;
-                }
-            }
-        }
-
         private void timerFPS_Tick(object sender, EventArgs e)
         {
             //isTickRender = true;
@@ -914,8 +1004,6 @@ namespace VACamera
 
                 stopWatchFPS.Reset();
                 stopWatchFPS.Start();
-
-                actualFrameRate = (int)fps1;
             }
         }
 

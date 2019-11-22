@@ -154,12 +154,16 @@
             // 
             // backgroundBurnWorker1
             // 
+            this.backgroundBurnWorker1.WorkerReportsProgress = true;
+            this.backgroundBurnWorker1.WorkerSupportsCancellation = true;
             this.backgroundBurnWorker1.DoWork += new System.ComponentModel.DoWorkEventHandler(this.backgroundBurnWorker1_DoWork);
             this.backgroundBurnWorker1.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.backgroundBurnWorker1_ProgressChanged);
             this.backgroundBurnWorker1.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.backgroundBurnWorker1_RunWorkerCompleted);
             // 
             // backgroundBurnWorker2
             // 
+            this.backgroundBurnWorker2.WorkerReportsProgress = true;
+            this.backgroundBurnWorker2.WorkerSupportsCancellation = true;
             this.backgroundBurnWorker2.DoWork += new System.ComponentModel.DoWorkEventHandler(this.backgroundBurnWorker2_DoWork);
             this.backgroundBurnWorker2.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.backgroundBurnWorker2_ProgressChanged);
             this.backgroundBurnWorker2.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.backgroundBurnWorker2_RunWorkerCompleted);
@@ -213,7 +217,6 @@
             this.txtTimeLeft2.TabIndex = 2;
             this.txtTimeLeft2.Text = "00:00";
             this.txtTimeLeft2.TextAlign = System.Drawing.ContentAlignment.TopRight;
-            this.txtTimeLeft2.Visible = false;
             // 
             // txtTimeLeft1
             // 
@@ -223,8 +226,7 @@
             this.txtTimeLeft1.Size = new System.Drawing.Size(49, 21);
             this.txtTimeLeft1.TabIndex = 2;
             this.txtTimeLeft1.Text = "00:00";
-            this.txtTimeLeft1.TextAlign = System.Drawing.ContentAlignment.TopRight;
-            this.txtTimeLeft1.Visible = false;
+            this.txtTimeLeft1.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
             // label7
             // 

@@ -243,14 +243,20 @@ namespace VACamera
 
         private void btnWriteAll_Click(object sender, EventArgs e)
         {
-            if (btnWrite1.Enabled)
+            if (btnWrite1.Enabled && listDrive1.SelectedIndex != -1)
             {
                 btnWrite1_Click(btnWrite1, EventArgs.Empty);
+                btnWrite1.Enabled = false;
+                btnWriteAll.Enabled = false;
+                btnCancel.Enabled = false;
             }
 
-            if (btnWrite2.Enabled)
+            if (btnWrite2.Enabled && listDrive2.SelectedIndex != -1)
             {
                 btnWrite2_Click(btnWrite2, EventArgs.Empty);
+                btnWrite2.Enabled = false;
+                btnWriteAll.Enabled = false;
+                btnCancel.Enabled = false;
             }
         }
 
@@ -482,6 +488,8 @@ namespace VACamera
                             var percent = (int)((100 * writtenSectors) / burnData.sectorCount);
                             txtStatus1.Text = string.Format("Tiến trình: {0}%", percent);
                             progressBar1.Value = percent;
+                            TimeSpan timeRun = TimeSpan.FromSeconds(_burnData1.remainingTime);
+                            txtTimeLeft1.Text = timeRun.ToString("mm':'ss");
                         }
                         else
                         {
@@ -537,6 +545,8 @@ namespace VACamera
                             var percent = (int)((100 * writtenSectors) / burnData.sectorCount);
                             txtStatus2.Text = string.Format("Tiến trình: {0}%", percent);
                             progressBar2.Value = percent;
+                            TimeSpan timeRun = TimeSpan.FromSeconds(_burnData2.remainingTime);
+                            txtTimeLeft2.Text = timeRun.ToString("mm':'ss");
                         }
                         else
                         {
@@ -563,7 +573,7 @@ namespace VACamera
         private void backgroundBurnWorker1_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             txtStatus1.Text = (int)e.Result == 0 ? "Đã ghi xong!" : "Có lỗi trong quá trình ghi đĩa!";
-            progressBar1.Value = 0;
+            //progressBar1.Value = 0;
 
             _isBurning1 = false;
             _isRecordSuccess1 = ((int)e.Result == 0);
@@ -575,7 +585,7 @@ namespace VACamera
         private void backgroundBurnWorker2_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             txtStatus2.Text = (int)e.Result == 0 ? "Đã ghi xong!" : "Có lỗi trong quá trình ghi đĩa!";
-            progressBar2.Value = 0;
+            //progressBar2.Value = 0;
 
             _isBurning2 = false;
             _isRecordSuccess2 = ((int)e.Result == 0);

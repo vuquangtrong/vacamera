@@ -36,3 +36,10 @@
 	SharpDX: 2.6.0
 	VIDEO is OK
 	AUDIO is OK
+
+1122_1600:
+	Accord 3.3.0
+	SharpDX: 2.6.0
+	VIDEO is OK, dont care webcam fps, video is fixed with setting fps
+	AUDIO is OK
+	Progress bar in DVD write screen is now working

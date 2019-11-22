@@ -41,6 +41,7 @@ namespace VACamera
         public VideoFormat VideoOutputFormat { get; private set; } /* MPEG4 */
         public int VideoBitRate { get; private set; } /* 3 Mbps */
         public int VideoFrameRate { get; private set; } /* 30 */
+        public int VideoFrameDuration { get; private set; } /* 1000/30 */
 
         // below attributs is automatically set after VideoMixingMode is changed
         public int Frame1_Width { get; private set; }
@@ -72,7 +73,7 @@ namespace VACamera
         {
             if (mode == null || mode.Equals(""))
             {
-                AudioChannel = AudioMode.Mono;
+                AudioChannel = AudioMode.Stereo;
             }
             else
             {
@@ -82,7 +83,7 @@ namespace VACamera
                 }
                 catch (Exception ex)
                 {
-                    AudioChannel = AudioMode.Mono;
+                    AudioChannel = AudioMode.Stereo;
                     Log.WriteLine(ex.ToString());
                 }
             }
@@ -308,6 +309,7 @@ namespace VACamera
         public void SetVideoFrameRate(int rate)
         {
             VideoFrameRate = rate;
+            VideoFrameDuration = 1000 / rate;
             Log.WriteLine("VideoFrameRate = " + VideoFrameRate);
         }
 

@@ -73,6 +73,8 @@ namespace VACamera
             {
                 Log.WriteLine(ex.ToString());
             }
+
+            Hide();
         }
 
         private void FormMain_Load(object sender, EventArgs e)
@@ -91,22 +93,23 @@ namespace VACamera
                 {
                     sessionInfo = formNewSession.SessionInfo;
                     Log.WriteLine(sessionInfo.ToString());
+                    Show();
+
+                    // show setting if it's the first time
+                    if (!File.Exists(Environment.CurrentDirectory + "\\Settings.ini"))
+                    {
+                        using (FormSettings formSettings = new FormSettings())
+                        {
+                            formSettings.ShowDialog();
+                            settings = formSettings.Settings;
+                            settings.SaveSettings();
+                            Log.WriteLine(settings.ToString());
+                        }
+                    }
                 }
                 else
                 {
                     Close();
-                }
-            }
-
-            // show setting if it's the first time
-            if (!File.Exists(Environment.CurrentDirectory + "\\Settings.ini"))
-            {
-                using (FormSettings formSettings = new FormSettings())
-                {
-                    formSettings.ShowDialog();
-                    settings = formSettings.Settings;
-                    settings.SaveSettings();
-                    Log.WriteLine(settings.ToString());
                 }
             }
         }
@@ -642,7 +645,7 @@ namespace VACamera
                 graphics.DrawString(sessionInfo.Name4, textFont, Brushes.Red, textLine3);
                 // BottomRight: Name 5 and DateTime
                 graphics.DrawString(sessionInfo.Name5, textFont, Brushes.Red, textLine2, textDirectionRTL);
-                graphics.DrawString(DateTime.Now.ToString("HH:mm:ss.fff dd/MM/yyyy"), textFont, Brushes.Red, textLine3, textDirectionRTL);
+                graphics.DrawString(DateTime.Now.ToString("HH:mm:ss dd/MM/yyyy"), textFont, Brushes.Red, textLine3, textDirectionRTL);
                 //Log.WriteLine("render text: done");
             }
             catch (Exception ex)

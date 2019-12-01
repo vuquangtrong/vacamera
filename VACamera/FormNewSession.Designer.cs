@@ -31,6 +31,8 @@
             this.components = new System.ComponentModel.Container();
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.label7 = new System.Windows.Forms.Label();
+            this.txtLicense = new System.Windows.Forms.Label();
             this.button2 = new System.Windows.Forms.Button();
             this.button1 = new System.Windows.Forms.Button();
             this.textName5 = new System.Windows.Forms.TextBox();
@@ -61,6 +63,8 @@
             // 
             // groupBox1
             // 
+            this.groupBox1.Controls.Add(this.label7);
+            this.groupBox1.Controls.Add(this.txtLicense);
             this.groupBox1.Controls.Add(this.button2);
             this.groupBox1.Controls.Add(this.button1);
             this.groupBox1.Controls.Add(this.textName5);
@@ -81,6 +85,24 @@
             this.groupBox1.TabIndex = 1;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Kê khai thông tin";
+            // 
+            // label7
+            // 
+            this.label7.AutoSize = true;
+            this.label7.Location = new System.Drawing.Point(29, 325);
+            this.label7.Name = "label7";
+            this.label7.Size = new System.Drawing.Size(142, 21);
+            this.label7.TabIndex = 9;
+            this.label7.Text = "Giấy phép đăng ký:";
+            // 
+            // txtLicense
+            // 
+            this.txtLicense.AutoSize = true;
+            this.txtLicense.Location = new System.Drawing.Point(224, 325);
+            this.txtLicense.Name = "txtLicense";
+            this.txtLicense.Size = new System.Drawing.Size(105, 21);
+            this.txtLicense.TabIndex = 8;
+            this.txtLicense.Text = "Chưa đăng ký";
             // 
             // button2
             // 
@@ -248,5 +270,7 @@
         private System.Windows.Forms.Button button1;
         private System.Windows.Forms.Timer timer1;
         private System.Windows.Forms.Button button2;
+        private System.Windows.Forms.Label txtLicense;
+        private System.Windows.Forms.Label label7;
     }
 }

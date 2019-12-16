@@ -60,9 +60,7 @@ namespace VACamera
                         Log.WriteLine("Company = " + company);
                         Log.WriteLine("Computer = " + computer + "?" + Environment.MachineName);
 
-                        if (name != null
-                            && company != null
-                               && computer != null && computer.ToUpper().Equals(Environment.MachineName))
+                        if (name != null && company != null)
                         {
                             SessionInfo.License = name + " " + company;
                             txtLicense.Text = SessionInfo.License;

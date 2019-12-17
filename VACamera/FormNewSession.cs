@@ -54,15 +54,11 @@ namespace VACamera
                     {
                         string name = (String)key.GetValue("Name");
                         string company = (String)key.GetValue("Company");
-                        string computer = (String)key.GetValue("Computer");
 
                         Log.WriteLine("Name = " + name);
                         Log.WriteLine("Company = " + company);
-                        Log.WriteLine("Computer = " + computer + "?" + Environment.MachineName);
 
-                        if (name != null
-                            && company != null
-                               && computer != null && computer.ToUpper().Equals(Environment.MachineName))
+                        if (name != null && company != null)
                         {
                             SessionInfo.License = name + " " + company;
                             txtLicense.Text = SessionInfo.License;

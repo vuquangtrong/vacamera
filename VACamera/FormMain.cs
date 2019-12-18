@@ -9,9 +9,11 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.IO;
+using System.Media;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using VACamera.Properties;
 
 namespace VACamera
 {
@@ -20,18 +22,19 @@ namespace VACamera
         enum VideoRecordState
         {
             IDLE,
-            RECORDING,
-            PAUSE
+            RECORDING
         }
 
         VideoRecordState videoRecordState = VideoRecordState.IDLE;
         VideoFileWriter videoFileWriter = null;
         Thread videoRenderThread = null;
         int recordTime = 0;
+        int recordPart = 0;
         static readonly Object syncRender = new Object();
 
         string outputFolder = Environment.CurrentDirectory + "\\records";
         string outputFile = "";
+        string videoExtension = ".mp4";
 
         SessionInfo sessionInfo = new SessionInfo();
         Settings settings = new Settings();
@@ -57,6 +60,8 @@ namespace VACamera
         Rectangle textLine3 = new Rectangle(10, Settings.VideoHeight - 10 - 40, Settings.VideoWidth - 20, 40);
 
         Stopwatch stopWatchFPS = null;
+
+        SoundPlayer beepPlayer = new SoundPlayer(Resources.beep);
 
         public FormMain()
         {
@@ -92,6 +97,8 @@ namespace VACamera
                     Log.WriteLine(sessionInfo.ToString());
                     Show();
 
+                    PrepareRecord();
+
                     // show setting if it's the first time
                     if (!File.Exists(Environment.CurrentDirectory + "\\Settings.ini"))
                     {
@@ -123,7 +130,10 @@ namespace VACamera
 
         private void FormMain_FormClosing(object sender, FormClosingEventArgs e)
         {
-            StopRecording();
+            if (videoRecordState != VideoRecordState.IDLE)
+            {
+                StopRecording();
+            }
             StopDevices();
             StopRender();
         }
@@ -672,12 +682,25 @@ namespace VACamera
             _graphics.Dispose();
         }
 
+        private void PrepareRecord()
+        {
+            recordPart = 0;
+            try
+            {
+                File.Delete("records.txt");
+            }
+            catch (Exception ex)
+            {
+                Log.WriteLine(ex.ToString());
+            }
+        }
+
         private void StartRecording()
         {
             if (videoRecordState == VideoRecordState.IDLE)
             {
                 VideoCodec videoCodec = VideoCodec.H264; /* MP4 container in H264 encode, H264 supports variant framerate */
-                string videoExtension = ".mp4";
+                videoExtension = ".mp4";
 
                 if (settings.VideoOutputFormat == Settings.VideoFormat.MPEG2)
                 {
@@ -685,7 +708,7 @@ namespace VACamera
                     videoExtension = ".mpg";
                 }
 
-                outputFile = outputFolder + "\\" + sessionInfo.DateTime + videoExtension;
+                outputFile = outputFolder + "\\" + sessionInfo.DateTime + "_" + recordPart.ToString() + videoExtension;
                 videoFileWriter = new VideoFileWriter();
 
                 if (audioDevice != null)
@@ -707,47 +730,26 @@ namespace VACamera
                 }
 
                 timerRecord.Start();
-                //if (videoRecordingTime == null)
-                //{
-                //    videoRecordingTime = new Stopwatch();
-                //    videoRecordingTime.Start();
-                //}
                 videoRecordState = VideoRecordState.RECORDING;
                 Log.WriteLine(">>> START recording");
 
-            }
-            else if (videoRecordState == VideoRecordState.PAUSE)
-            {
-                timerRecord.Start();
-                videoRecordState = VideoRecordState.RECORDING;
-                Log.WriteLine(">>> RESUME recording");
+                // track new file
+                string command = "echo file '" + outputFile + "' >> records.txt";
+                Process process = new Process();
+                ProcessStartInfo startInfo = new ProcessStartInfo();
+
+                startInfo.WindowStyle = ProcessWindowStyle.Hidden;
+                startInfo.FileName = "cmd.exe";
+                startInfo.Arguments = "/C " + command;
+                process.StartInfo = startInfo;
+                process.Start();
+                process.WaitForExit();
             }
         }
 
         private void PauseRecording()
         {
             if (videoRecordState == VideoRecordState.RECORDING)
-            {
-                videoRecordState = VideoRecordState.PAUSE;
-
-                lock (syncRender)
-                {
-                    if (videoFileWriter.IsOpen)
-                    {
-                        videoFileWriter.Flush();
-
-                    }
-                }
-
-                timerRecord.Stop();
-                Log.WriteLine(">>> PAUSE recording");
-            }
-        }
-
-        private void StopRecording()
-        {
-            if (videoRecordState == VideoRecordState.RECORDING
-                || videoRecordState == VideoRecordState.PAUSE)
             {
                 videoRecordState = VideoRecordState.IDLE;
 
@@ -763,9 +765,46 @@ namespace VACamera
                 }
 
                 timerRecord.Stop();
-                //videoRecordingTime.Stop();
-                //videoRecordingTime = null;
-                Log.WriteLine(">>> STOP recording");
+                Log.WriteLine(">>> PAUSE recording");
+                recordPart++;
+            }
+        }
+
+        private void StopRecording()
+        {
+            PauseRecording();
+
+            Log.WriteLine(">>> MERGE VIDEO FILE");
+            outputFile = outputFolder + "\\" + sessionInfo.DateTime + videoExtension;
+
+            // join files
+            if (File.Exists("ffmpeg.exe"))
+            {
+                String command = "ffmpeg.exe -f concat -safe 0 -i records.txt -c copy " + outputFile;
+
+                Process process = new Process();
+                ProcessStartInfo startInfo = new ProcessStartInfo();
+
+                startInfo.WindowStyle = ProcessWindowStyle.Hidden;
+                startInfo.FileName = "cmd.exe";
+                startInfo.Arguments = "/C " + command;
+                process.StartInfo = startInfo;
+                process.Start();
+                process.WaitForExit();
+
+                // remove segmented files
+                var dir = new DirectoryInfo(outputFolder);
+                foreach (var file in dir.EnumerateFiles(sessionInfo.DateTime + "_*" + videoExtension))
+                {
+                    try
+                    {
+                        file.Delete();
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.WriteLine(ex.ToString());
+                    }
+                }
             }
         }
 
@@ -781,6 +820,28 @@ namespace VACamera
 
             TimeSpan timeLeft = TimeSpan.FromSeconds(sessionInfo.MaxTime - recordTime);
             txtTimeLeft.Text = timeLeft.ToString("hh':'mm':'ss");
+
+            if (timeLeft.TotalSeconds < 600) /* less than 10 mins */
+            {
+                // we can use default windows sound, select one of below
+                // user can disable default windows sound via sound settings !!!
+                //SystemSounds.Asterisk.Play();
+                //SystemSounds.Beep.Play();
+                //SystemSounds.Exclamation.Play();
+                //SystemSounds.Hand.Play();
+                //SystemSounds.Question.Play();
+
+                // use our sound
+                beepPlayer.Play();
+                txtTimeLeft.ForeColor = Color.Red;
+            }
+
+            if (timeLeft.TotalSeconds == 0)
+            {
+                btnPause.PerformClick();
+                btnRecord.Enabled = false;
+                MessageBox.Show("Đã quá thời lượng ghi tối đa." + Environment.NewLine + "Vui lòng nhấn kết thúc!", "Thông báo", MessageBoxButtons.OK);
+            }
 
             if (videoRecordState == VideoRecordState.RECORDING)
             {
@@ -812,6 +873,7 @@ namespace VACamera
                 if (formNewSession.ShowDialog(this) == DialogResult.OK)
                 {
                     sessionInfo = formNewSession.SessionInfo;
+                    PrepareRecord();
 
                     // debug
                     Log.WriteLine(sessionInfo.ToString());
@@ -861,8 +923,7 @@ namespace VACamera
 
         private void btnRecord_Click(object sender, EventArgs e)
         {
-            if (videoRecordState == VideoRecordState.IDLE
-                || videoRecordState == VideoRecordState.PAUSE)
+            if (videoRecordState == VideoRecordState.IDLE)
             {
                 btnRecord.Enabled = false;
                 btnPause.Enabled = true;
@@ -895,35 +956,30 @@ namespace VACamera
 
         private void btnStop_Click(object sender, EventArgs e)
         {
-            if (videoRecordState == VideoRecordState.RECORDING
-                || videoRecordState == VideoRecordState.PAUSE)
+            if (MessageBox.Show("Kết thúc ghi hình và ghi DVD?", "Xác nhận", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
             {
-                if (MessageBox.Show("Kết thúc ghi hình và ghi DVD?", "Xác nhận", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
-                {
-                    btnRecord.Enabled = false; // must start new session
-                    btnPause.Enabled = false;
-                    btnStop.Enabled = false;
-                    btnReplay.Enabled = true;
-                    btnWriteDisk.Enabled = true;
+                btnRecord.Enabled = false; // must start new session
+                btnPause.Enabled = false;
+                btnStop.Enabled = false;
+                btnReplay.Enabled = true;
+                btnWriteDisk.Enabled = true;
 
-                    settingsToolStripMenuItem.Enabled = true; // can change settings again
-                    signalRecord.BackgroundImage = null;
+                settingsToolStripMenuItem.Enabled = true; // can change settings again
+                signalRecord.BackgroundImage = null;
 
-                    StopRecording();
-                    Thread.Sleep(1000);
+                StopRecording();
+                Thread.Sleep(1000);
 
-                    //StopDevices(); // this method is slow
-                    PausePreview();
+                //StopDevices(); // this method is slow
+                PausePreview();
 
-                    btnWriteDisk_Click(btnWriteDisk, EventArgs.Empty);
-                }
+                btnWriteDisk_Click(btnWriteDisk, EventArgs.Empty);
             }
         }
 
         private void btnReplay_Click(object sender, EventArgs e)
         {
-            if (videoRecordState == VideoRecordState.IDLE
-                || videoRecordState == VideoRecordState.PAUSE)
+            if (videoRecordState == VideoRecordState.IDLE)
             {
                 if (File.Exists(outputFile))
                 {

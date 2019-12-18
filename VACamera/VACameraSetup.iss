@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "VACamera"
-#define MyAppVersion "1.0"
+#define MyAppVersion "1.1"
 #define MyAppPublisher "My Company, Inc."
 #define MyAppURL "http://www.example.com/"
 #define MyAppExeName "VACamera.exe"
@@ -104,6 +104,7 @@ Source: "bin\x86\Release\swscale-2.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "bin\x86\Release\VACamera.application"; DestDir: "{app}"; Flags: ignoreversion
 Source: "bin\x86\Release\VACamera.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "bin\x86\Release\VACamera.exe.manifest"; DestDir: "{app}"; Flags: ignoreversion
+Source: "bin\x86\Release\ffmpeg.exe"; DestDir: "{app}"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]

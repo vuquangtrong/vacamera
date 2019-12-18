@@ -17,6 +17,19 @@ namespace VACamera
 {
     public partial class FormMain : Form
     {
+        enum VideoRecordState
+        {
+            IDLE,
+            RECORDING,
+            PAUSE
+        }
+
+        VideoRecordState videoRecordState = VideoRecordState.IDLE;
+        VideoFileWriter videoFileWriter = null;
+        Thread videoRenderThread = null;
+        int recordTime = 0;
+        static readonly Object syncRender = new Object();
+
         string outputFolder = Environment.CurrentDirectory + "\\records";
         string outputFile = "";
 
@@ -33,14 +46,10 @@ namespace VACamera
 
         Bitmap frame1 = null;
         static readonly Object syncFrame1 = new Object();
-        bool isFrame1_Rendering = false;
 
         Bitmap frame2 = null;
         static readonly Object syncFrame2 = new Object();
-        bool isFrame2_Rendering = false;
 
-        Bitmap videoFrame = null;
-        Graphics graphics = null;
         Font textFont = new Font("Tahoma", 18);
         StringFormat textDirectionRTL = new StringFormat(StringFormatFlags.DirectionRightToLeft);
         Rectangle textLine1 = new Rectangle(10, 10, Settings.VideoWidth - 20, 40);
@@ -48,18 +57,6 @@ namespace VACamera
         Rectangle textLine3 = new Rectangle(10, Settings.VideoHeight - 10 - 40, Settings.VideoWidth - 20, 40);
 
         Stopwatch stopWatchFPS = null;
-        Thread videoRenderThread;
-
-        enum VideoRecordState
-        {
-            IDLE,
-            RECORDING,
-            PAUSE
-        }
-        VideoRecordState videoRecordState = VideoRecordState.IDLE;
-        VideoFileWriter videoFileWriter = null;
-        static readonly Object syncRender = new Object();
-        int recordTime = 0;
 
         public FormMain()
         {
@@ -116,13 +113,6 @@ namespace VACamera
 
         private void FormMain_Shown(object sender, EventArgs e)
         {
-            // init render buffer
-            videoFrame = new Bitmap(Settings.VideoWidth, Settings.VideoHeight, PixelFormat.Format24bppRgb);
-            graphics = Graphics.FromImage(videoFrame);
-            graphics.CompositingMode = CompositingMode.SourceOver;
-            graphics.CompositingQuality = CompositingQuality.HighSpeed;
-            graphics.SmoothingMode = SmoothingMode.HighSpeed;
-
             // init render thread
             videoRenderThread = new Thread(VideoRenderWorker);
             videoRenderThread.Start();
@@ -501,99 +491,87 @@ namespace VACamera
             //    Log.WriteLine("FrameIndex = " + eventArgs.FrameIndex);
             //}
 
-            bool freeToGo = false;
             lock (syncFrame1)
             {
-                freeToGo = !isFrame1_Rendering;
-            }
-            if (freeToGo)
-            {
-                lock (syncFrame1)
+                try
                 {
-                    try
+                    if (frame1 != null)
                     {
-                        if (frame1 != null)
-                        {
-                            frame1.Dispose();
-                        }
-                        frame1 = (Bitmap)eventArgs.Frame.Clone();
+                        frame1.Dispose();
                     }
-                    catch (Exception ex)
-                    {
-                        Log.WriteLine(ex.ToString());
-                    }
+                    frame1 = (Bitmap)eventArgs.Frame.Clone();
                 }
-            }
-            else
-            {
-                //Log.WriteLine("skip frame 1");
+                catch (Exception ex)
+                {
+                    Log.WriteLine(ex.ToString());
+                }
             }
         }
 
         private void VideoDevice2_NewFrame(object sender, Accord.Video.NewFrameEventArgs eventArgs)
         {
-            bool freeToGo = false;
             lock (syncFrame2)
             {
-                freeToGo = !isFrame2_Rendering;
-            }
-            if (freeToGo)
-            {
-                lock (syncFrame2)
+                try
                 {
-                    try
+                    if (frame2 != null)
                     {
-                        if (frame2 != null)
-                        {
-                            frame2.Dispose();
-                        }
-                        frame2 = (Bitmap)eventArgs.Frame.Clone();
+                        frame2.Dispose();
                     }
-                    catch (Exception ex)
-                    {
-                        Log.WriteLine(ex.ToString());
-                    }
+                    frame2 = (Bitmap)eventArgs.Frame.Clone();
                 }
-            }
-            else
-            {
-                //Log.WriteLine("skip frame 2");
+                catch (Exception ex)
+                {
+                    Log.WriteLine(ex.ToString());
+                }
             }
         }
 
         private void RenderVideoFrame()
         {
+            // this procedure is run in many threads
+
+            // init internal buffers
+            Bitmap _frame1 = null;
+            Bitmap _frame2 = null;
+            Bitmap _videoFrame = new Bitmap(Settings.VideoWidth, Settings.VideoHeight, PixelFormat.Format24bppRgb);
+            Graphics _graphics = Graphics.FromImage(_videoFrame);
+            _graphics.CompositingMode = CompositingMode.SourceOver;
+            _graphics.CompositingQuality = CompositingQuality.HighSpeed;
+            _graphics.SmoothingMode = SmoothingMode.HighSpeed;
+
             // render frame1 which comes from videoDevive1's thread, we need to lock it
             lock (syncFrame1)
             {
-                isFrame1_Rendering = true; // this notify videoDevice1's thread to drop new frame 
-                                           // if new frame comes while old frame is being processed
+                try
+                {
+                    if (frame1 != null)
+                    {
+                        _frame1 = (Bitmap)frame1.Clone();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.WriteLine(ex.ToString());
+                }
             }
-            if (frame1 != null)
+
+            if (_frame1 != null)
             {
                 //Log.WriteLine("render frame 1");
                 try
                 {
                     //Log.WriteLine("render frame 1: start");
-                    graphics.DrawImage(frame1,
+                    _graphics.DrawImage(_frame1,
                         new Rectangle(settings.Frame1_X, settings.Frame1_Y, settings.Frame1_Width, settings.Frame1_Height),
-                        new Rectangle(0, 0, frame1.Width, frame1.Height),
+                        new Rectangle(0, 0, _frame1.Width, _frame1.Height),
                         GraphicsUnit.Pixel);
                     //Log.WriteLine("render frame 1: done");
                 }
                 catch (Exception ex)
                 {
                     Log.WriteLine(ex.ToString());
-                    lock (syncFrame1)
-                    {
-                        isFrame1_Rendering = false;
-                    }
-                    return;
                 }
-            }
-            lock (syncFrame1)
-            {
-                isFrame1_Rendering = false;
             }
 
             if (settings.VideoMixingMode != Settings.VideoMode.Single)
@@ -601,34 +579,35 @@ namespace VACamera
                 // render frame2 which comes from videoDevive2's thread, we need to lock it
                 lock (syncFrame2)
                 {
-                    isFrame2_Rendering = true; // this notify videoDevice2's thread to drop new frame 
-                                               // if new frame comes while old frame is being processed
+                    try
+                    {
+                        if (frame2 != null)
+                        {
+                            _frame2 = (Bitmap)frame2.Clone();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.WriteLine(ex.ToString());
+                    }
                 }
-                if (frame2 != null)
+
+                if (_frame2 != null)
                 {
                     //Log.WriteLine("render frame 2");
                     try
                     {
                         //Log.WriteLine("render frame 2: start");
-                        graphics.DrawImage(frame2,
+                        _graphics.DrawImage(_frame2,
                             new Rectangle(settings.Frame2_X, settings.Frame2_Y, settings.Frame2_Width, settings.Frame2_Height),
-                            new Rectangle(0, 0, frame2.Width, frame2.Height),
+                            new Rectangle(0, 0, _frame2.Width, _frame2.Height),
                             GraphicsUnit.Pixel);
                         //Log.WriteLine("render frame 2: done");
                     }
                     catch (Exception ex)
                     {
                         Log.WriteLine(ex.ToString());
-                        lock (syncFrame2)
-                        {
-                            isFrame2_Rendering = false;
-                        }
-                        return;
                     }
-                }
-                lock (syncFrame2)
-                {
-                    isFrame2_Rendering = false;
                 }
             }
 
@@ -637,15 +616,15 @@ namespace VACamera
             {
                 //Log.WriteLine("render text: start");
                 // TopLeft: Name1
-                graphics.DrawString(sessionInfo.Name1, textFont, Brushes.Red, textLine1);
+                _graphics.DrawString(sessionInfo.Name1, textFont, Brushes.Red, textLine1);
                 // TopRight: Name 2
-                graphics.DrawString(sessionInfo.Name2, textFont, Brushes.Red, textLine1, textDirectionRTL);
+                _graphics.DrawString(sessionInfo.Name2, textFont, Brushes.Red, textLine1, textDirectionRTL);
                 // BottomLeft: Name 3, Name 4
-                graphics.DrawString(sessionInfo.Name3, textFont, Brushes.Red, textLine2);
-                graphics.DrawString(sessionInfo.Name4, textFont, Brushes.Red, textLine3);
+                _graphics.DrawString(sessionInfo.Name3, textFont, Brushes.Red, textLine2);
+                _graphics.DrawString(sessionInfo.Name4, textFont, Brushes.Red, textLine3);
                 // BottomRight: Name 5 and DateTime
-                graphics.DrawString(sessionInfo.Name5, textFont, Brushes.Red, textLine2, textDirectionRTL);
-                graphics.DrawString(DateTime.Now.ToString("HH:mm:ss dd/MM/yyyy"), textFont, Brushes.Red, textLine3, textDirectionRTL);
+                _graphics.DrawString(sessionInfo.Name5, textFont, Brushes.Red, textLine2, textDirectionRTL);
+                _graphics.DrawString(DateTime.Now.ToString("HH:mm:ss dd/MM/yyyy"), textFont, Brushes.Red, textLine3, textDirectionRTL);
                 //Log.WriteLine("render text: done");
             }
             catch (Exception ex)
@@ -657,7 +636,7 @@ namespace VACamera
             //Log.WriteLine("update preview: start");
             if (pictureFrame != null)
             {
-                UpdateLiveImageInvoker(pictureFrame, (Bitmap)videoFrame.Clone());
+                UpdateLiveImageInvoker(pictureFrame, (Bitmap)_videoFrame.Clone());
             }
             //Log.WriteLine("update preview: done");
 
@@ -669,10 +648,8 @@ namespace VACamera
                 {
                     try
                     {
-                        // videoFrame is only used by videoDevice1's thread, no need to clone
                         //Log.WriteLine("write frame: start");
-                        //videoFileWriter.WriteVideoFrame(videoFrame, timestamp);
-                        videoFileWriter.WriteVideoFrame(videoFrame);
+                        videoFileWriter.WriteVideoFrame(_videoFrame);
                         //Log.WriteLine("write frame: done");
                     }
                     catch (Exception ex)
@@ -681,6 +658,18 @@ namespace VACamera
                     }
                 }
             }
+
+            // finally dispose resources
+            if (_frame1 != null)
+            {
+                _frame1.Dispose();
+            }
+            if (_frame2 != null)
+            {
+                _frame2.Dispose();
+            }
+            _videoFrame.Dispose();
+            _graphics.Dispose();
         }
 
         private void StartRecording()

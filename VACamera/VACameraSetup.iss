@@ -6,6 +6,7 @@
 #define MyAppPublisher "My Company, Inc."
 #define MyAppURL "http://www.example.com/"
 #define MyAppExeName "VACamera.exe"
+#define TimeStamp GetDateTimeString('ddmm_hhnn', '-', ':')
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application. Do not use the same AppId value in installers for other applications.
@@ -20,7 +21,7 @@ AppUpdatesURL={#MyAppURL}
 DefaultDirName={autopf}\{#MyAppName}
 DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
-OutputBaseFilename={#MyAppName}_{#MyAppVersion}_Setup
+OutputBaseFilename={#MyAppName}_{#MyAppVersion}_Setup_{#TimeStamp}
 SetupIconFile=webcam.ico
 Password=123456
 Compression=lzma
@@ -69,10 +70,11 @@ function GetUser(Param: String): String;
 begin
   { Return a user value }
   { Could also be split into separate GetUserName and GetUserCompany functions }
-  if Param = 'Name' then
-    Result := UserPage.Values[0]
-  else if Param = 'Company' then
+  if Param = 'Name' then begin
+    Result := UserPage.Values[0];
+  end else if Param = 'Company' then begin
     Result := UserPage.Values[1];
+  end;
 end;
 
 [Languages]

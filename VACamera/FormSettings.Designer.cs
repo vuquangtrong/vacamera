@@ -213,9 +213,9 @@
             this.listFrameRate.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.listFrameRate.FormattingEnabled = true;
             this.listFrameRate.Items.AddRange(new object[] {
-            "30",
+            "15",
             "24",
-            "15"});
+            "30"});
             this.listFrameRate.Location = new System.Drawing.Point(147, 265);
             this.listFrameRate.Name = "listFrameRate";
             this.listFrameRate.Size = new System.Drawing.Size(102, 29);

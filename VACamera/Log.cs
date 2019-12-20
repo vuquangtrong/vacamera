@@ -6,12 +6,11 @@ namespace VACamera
 {
     static class Log
     {
-        static FileStream fileStream = null;
         static StreamWriter streamWriter = null;
 
         public static void Init()
         {
-            string logPath = Environment.CurrentDirectory + "\\logs";
+            string logPath = "C:\\logs";
 
             try
             {
@@ -22,21 +21,17 @@ namespace VACamera
                 WriteLine(ex.ToString());
             }
 
-            // redirect console log to a file
             try
             {
-                fileStream = new FileStream(logPath + "\\" + DateTime.Now.ToString("MMddyyyy_HHmmss") + ".log", FileMode.OpenOrCreate, FileAccess.Write);
-                streamWriter = new StreamWriter(fileStream);
-#if DEBUG
-#else
-                Console.SetOut(streamWriter);
-#endif
+                streamWriter = new StreamWriter(logPath + "\\" + DateTime.Now.ToString("MMddyyyy_HHmmss") + ".log");
             }
             catch (Exception ex)
             {
                 WriteLine("Cannot redirect log to a file!!!");
                 WriteLine(ex.ToString());
             }
+
+            WriteLine("VERSION: 191220 2230");
         }
 
         public static void Close()
@@ -44,11 +39,6 @@ namespace VACamera
             if (streamWriter != null)
             {
                 streamWriter.Close();
-            }
-
-            if (fileStream != null)
-            {
-                fileStream.Close();
             }
         }
 
@@ -58,7 +48,15 @@ namespace VACamera
             var st = new StackTrace();
             var sf = st.GetFrame(1);
             var currentMethodName = sf.GetMethod().Name;
+#if DEBUG
             Console.Write(ts + " " + currentMethodName + ": " + message);
+#else
+            if (streamWriter != null)
+            {
+                streamWriter.Write(ts + " " + currentMethodName + ": " + message);
+                streamWriter.Flush();
+            }
+#endif
         }
 
         public static void WriteLine(string message)
@@ -67,7 +65,15 @@ namespace VACamera
             var st = new StackTrace();
             var sf = st.GetFrame(1);
             var currentMethodName = sf.GetMethod().Name;
+#if DEBUG
             Console.WriteLine(ts + " " + currentMethodName + ": " + message);
+#else
+            if (streamWriter != null)
+            {
+                streamWriter.WriteLine(ts + " " + currentMethodName + ": " + message);
+                streamWriter.Flush();
+            }
+#endif
         }
     }
 }

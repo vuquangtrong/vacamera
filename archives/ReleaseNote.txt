@@ -63,3 +63,15 @@
 	Use VC++ Runtime 2013
 	Support preview after pause recording
 	Add beep sound when recording time left is less then 10 mins
+
+1221_0015
+	Accord 3.3.0
+	SharpDX: 2.6.0
+	VIDEO is OK, dont care webcam fps, video is fixed with setting fps
+	AUDIO is OK
+	Progress bar in DVD write screen is now working
+	Speedup render by using multiple threads
+	Use VC++ Runtime 2013
+	Support preview after pause recording
+	Add beep sound when recording time left is less then 10 mins
+	Use timestamp of video frame

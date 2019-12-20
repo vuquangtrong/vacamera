@@ -31,7 +31,7 @@ namespace VACamera
 
         // attributes
         public AudioMode AudioChannel { get; private set; } /* Stereo */
-        public int AudioBitRate { get; private set; } /* 320 kbps */
+        public int AudioBitRate { get; private set; } /* 160 kbps */
         public int AudioSampleRate { get; private set; } /* 44100 Hz */
         public int AudioFrameSize { get; private set; } /* 8Kb */
         public string AudioInputPath { get; private set; } /* Default */
@@ -40,7 +40,7 @@ namespace VACamera
         public string Camera2_InputPath { get; private set; } /* Default */
         public VideoFormat VideoOutputFormat { get; private set; } /* MPEG4 */
         public int VideoBitRate { get; private set; } /* 3 Mbps */
-        public int VideoFrameRate { get; private set; } /* 30 */
+        public int VideoFrameRate { get; private set; } /* 15 fps */
         public int VideoFrameDuration { get; private set; } /* 1000/30 */
 
         // below attributs is automatically set after VideoMixingMode is changed
@@ -100,7 +100,7 @@ namespace VACamera
         {
             if (rate == null || rate.Equals(""))
             {
-                AudioBitRate = 320 * 1000;
+                AudioBitRate = 160 * 1000;
             }
             else
             {
@@ -110,7 +110,7 @@ namespace VACamera
                 }
                 catch (Exception ex)
                 {
-                    AudioBitRate = 320 * 1000;
+                    AudioBitRate = 160 * 1000;
                     Log.WriteLine(ex.ToString());
                 }
             }
@@ -317,7 +317,7 @@ namespace VACamera
         {
             if (rate == null || rate.Equals(""))
             {
-                VideoFrameRate = 30;
+                VideoFrameRate = 15;
             }
             else
             {
@@ -327,7 +327,7 @@ namespace VACamera
                 }
                 catch (Exception ex)
                 {
-                    VideoFrameRate = 30;
+                    VideoFrameRate = 15;
                     Log.WriteLine(ex.ToString());
                 }
             }

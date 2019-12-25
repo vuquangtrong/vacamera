@@ -1,4 +1,6 @@
-﻿using System;
+﻿#define USE_SLOW_PC
+
+using System;
 using System.Diagnostics;
 using System.IO;
 
@@ -30,8 +32,6 @@ namespace VACamera
                 WriteLine("Cannot redirect log to a file!!!");
                 WriteLine(ex.ToString());
             }
-
-            WriteLine("VERSION: 191220 2230");
         }
 
         public static void Close()
@@ -44,6 +44,7 @@ namespace VACamera
 
         public static void Write(string message)
         {
+#if !USE_SLOW_PC
             var ts = DateTime.Now.ToString(@"MM/dd HH:mm:ss.fff");
             var st = new StackTrace();
             var sf = st.GetFrame(1);
@@ -57,10 +58,12 @@ namespace VACamera
                 streamWriter.Flush();
             }
 #endif
+#endif
         }
 
         public static void WriteLine(string message)
         {
+#if !USE_SLOW_PC
             var ts = DateTime.Now.ToString(@"MM/dd HH:mm:ss.fff");
             var st = new StackTrace();
             var sf = st.GetFrame(1);
@@ -73,6 +76,7 @@ namespace VACamera
                 streamWriter.WriteLine(ts + " " + currentMethodName + ": " + message);
                 streamWriter.Flush();
             }
+#endif
 #endif
         }
     }

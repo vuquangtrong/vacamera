@@ -251,11 +251,10 @@ namespace VACamera
 
         private void button1_Click(object sender, EventArgs e)
         {
+            Settings.SaveSettings();
             if (isDeviceChanged)
             {
                 Log.WriteLine("isDeviceChanged!");
-
-                Settings.SaveSettings();
                 DialogResult = DialogResult.OK;
             }
             Close();

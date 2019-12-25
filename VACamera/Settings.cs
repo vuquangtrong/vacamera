@@ -40,7 +40,7 @@ namespace VACamera
         public string Camera2_InputPath { get; private set; } /* Default */
         public VideoFormat VideoOutputFormat { get; private set; } /* MPEG4 */
         public int VideoBitRate { get; private set; } /* 3 Mbps */
-        public int VideoFrameRate { get; private set; } /* 15 fps */
+        public int VideoFrameRate { get; private set; } /* 24 fps */
         public int VideoFrameDuration { get; private set; } /* 1000/30 */
 
         // below attributs is automatically set after VideoMixingMode is changed
@@ -317,7 +317,7 @@ namespace VACamera
         {
             if (rate == null || rate.Equals(""))
             {
-                VideoFrameRate = 15;
+                VideoFrameRate = 24;
             }
             else
             {
@@ -327,7 +327,7 @@ namespace VACamera
                 }
                 catch (Exception ex)
                 {
-                    VideoFrameRate = 15;
+                    VideoFrameRate = 24;
                     Log.WriteLine(ex.ToString());
                 }
             }

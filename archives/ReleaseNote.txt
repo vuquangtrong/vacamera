@@ -75,3 +75,7 @@
 	Support preview after pause recording
 	Add beep sound when recording time left is less then 10 mins
 	Use timestamp of video frame
+
+1225_1743
+	~1221_0015
+	Tweak for slow PC: not logging, not sleep in render thread

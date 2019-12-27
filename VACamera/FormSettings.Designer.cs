@@ -193,11 +193,15 @@
             // listBitRate
             // 
             this.listBitRate.FormattingEnabled = true;
+            this.listBitRate.Items.AddRange(new object[] {
+            "1500000",
+            "3000000"});
             this.listBitRate.Location = new System.Drawing.Point(319, 265);
             this.listBitRate.Name = "listBitRate";
             this.listBitRate.Size = new System.Drawing.Size(165, 29);
             this.listBitRate.TabIndex = 4;
             this.listBitRate.SelectedIndexChanged += new System.EventHandler(this.listBitRate_SelectedIndexChanged);
+            this.listBitRate.TextChanged += new System.EventHandler(this.listBitRate_TextChanged);
             // 
             // label5
             // 

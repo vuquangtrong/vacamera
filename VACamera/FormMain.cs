@@ -1,4 +1,17 @@
-﻿using Accord.Audio;
+﻿#define USE_DIRECT_MEMORY_ACCESS
+#define USE_SLOW_PC
+
+/*
+ 
+Execution Time to render 1 video frame
+
+Mode    Single      Side2Side       Overlay
+GDI+    3.7 ms      7   ms          5.4 ms
+Direct  2.6 ms      3.9 ms          3.6 ms
+
+*/
+
+using Accord.Audio;
 using Accord.DirectSound;
 using Accord.Video.DirectShow;
 using Accord.Video.FFMPEG;
@@ -64,8 +77,6 @@ namespace VACamera
         Rectangle textLine2 = new Rectangle(10, Settings.VideoHeight - 10 - 40 - 40, Settings.VideoWidth - 20, 40);
         Rectangle textLine3 = new Rectangle(10, Settings.VideoHeight - 10 - 40, Settings.VideoWidth - 20, 40);
 
-        Stopwatch stopWatchFPS = null;
-
         SoundPlayer beepPlayer = new SoundPlayer(Resources.beep);
 
         public FormMain()
@@ -93,10 +104,16 @@ namespace VACamera
             btnReplay.Enabled = false;
             btnWriteDisk.Enabled = false;
 
-            // init queue
+            // init bitmap buffer
             _videoFrame = new Bitmap(Settings.VideoWidth, Settings.VideoHeight, PixelFormat.Format24bppRgb);
+
+            // init grapics
             _graphics = Graphics.FromImage(_videoFrame);
+#if USE_DIRECT_MEMORY_ACCESS
+            _graphics.CompositingMode = CompositingMode.SourceOver;
+#else
             _graphics.CompositingMode = CompositingMode.SourceCopy;
+#endif
             _graphics.CompositingQuality = CompositingQuality.HighSpeed;
             _graphics.InterpolationMode = InterpolationMode.NearestNeighbor;
             _graphics.TextRenderingHint = TextRenderingHint.SingleBitPerPixel;
@@ -183,6 +200,17 @@ namespace VACamera
             {
                 Log.WriteLine(ex.ToString());
             }
+        }
+
+        private VideoCapabilities selectResolution(VideoCaptureDevice device)
+        {
+            foreach (var cap in device.VideoCapabilities)
+            {
+                if (cap.FrameSize.Width == 1280
+                    && cap.FrameSize.Height == 720)
+                    return cap;
+            }
+            return device.VideoCapabilities[0];
         }
 
         private void InitDevices()
@@ -280,6 +308,13 @@ namespace VACamera
                         device1_MonikerString = videoDevices[0].MonikerString;
                     }
                     videoDevice1 = new VideoCaptureDevice(device1_MonikerString);
+                    for (int i = 0; i < videoDevice1.VideoCapabilities.Length; i++)
+                    {
+                        Log.WriteLine("VideoCapabilities " + i);
+                        Log.WriteLine("Resolution = " + videoDevice1.VideoCapabilities[i].FrameSize.ToString());
+                    }
+
+                    videoDevice1.VideoResolution = selectResolution(videoDevice1);
                     //videoDevice1.DesiredAverageTimePerFrame = 330000; // ns
                     videoDevice1.NewFrame += VideoDevice1_NewFrame;
                     videoDevice1.Start();
@@ -302,6 +337,12 @@ namespace VACamera
                     if (settings.VideoMixingMode != Settings.VideoMode.Single)
                     {
                         videoDevice2 = new VideoCaptureDevice(device2_MonikerString);
+                        for (int i = 0; i < videoDevice2.VideoCapabilities.Length; i++)
+                        {
+                            Log.WriteLine("VideoCapabilities " + i);
+                            Log.WriteLine("Resolution = " + videoDevice2.VideoCapabilities[i].FrameSize.ToString());
+                        }
+                        videoDevice2.VideoResolution = selectResolution(videoDevice2);
                         //videoDevice2.DesiredAverageTimePerFrame = 330000; // ns
                         videoDevice2.NewFrame += VideoDevice2_NewFrame;
                         videoDevice2.Start();
@@ -332,10 +373,6 @@ namespace VACamera
 
                 isPreviewing = true;
             }
-
-            // monitor actual framerate
-            stopWatchFPS = null;
-            timerFPS.Start();
 
             Log.WriteLine(settings.ToString());
         }
@@ -444,8 +481,6 @@ namespace VACamera
                 Log.WriteLine(ex.ToString());
                 videoDevice2 = null;
             }
-
-            timerFPS.Stop();
         }
 
         private bool isDevicesStopped()
@@ -528,7 +563,7 @@ namespace VACamera
             //    Log.WriteLine("CaptureFinished = " + eventArgs.CaptureFinished.ToString());
             //    Log.WriteLine("FrameIndex = " + eventArgs.FrameIndex);
             //}
-            //Log.WriteLine("Frame 1");
+
             lock (syncFrame1)
             {
                 try
@@ -543,12 +578,12 @@ namespace VACamera
                 {
                     Log.WriteLine(ex.ToString());
                 }
+                //Log.WriteLine("Frame 1: " + frame1.Width + "x" + frame1.Height);
             }
         }
 
         private void VideoDevice2_NewFrame(object sender, Accord.Video.NewFrameEventArgs eventArgs)
         {
-            //Log.WriteLine("Frame 2");
             lock (syncFrame2)
             {
                 try
@@ -563,63 +598,46 @@ namespace VACamera
                 {
                     Log.WriteLine(ex.ToString());
                 }
+                //Log.WriteLine("Frame 2: " + frame2.Width + "x" + frame2.Height);
             }
         }
 
+        Stopwatch stopWatch = new Stopwatch();
+#if !USE_SLOW_PC
+        int renderCount = 0;
+        double totalRenderTime = 0;
+#endif
         private void RenderVideoFrame()
         {
-            Stopwatch stopWatch = new Stopwatch();
+            stopWatch.Reset();
             stopWatch.Start();
+#if !USE_SLOW_PC
+            renderCount++;
+#endif
 
+#if USE_DIRECT_MEMORY_ACCESS
+            // use unsafe and parallel
+            unsafe
+            {
+                // lock video frame into memory
+                BitmapData bitmapData_videoFrame = _videoFrame.LockBits(
+                    new Rectangle(0, 0, _videoFrame.Width, _videoFrame.Height),
+                    ImageLockMode.WriteOnly,
+                    _videoFrame.PixelFormat);
+
+                byte* ptrFirstPixel_videoFrame = (byte*)bitmapData_videoFrame.Scan0;
+#else
             _graphics.CompositingMode = CompositingMode.SourceCopy;
-
-            // render frame1 which comes from videoDevive1's thread, we need to lock it
-            Bitmap _frame1 = null;
-            lock (syncFrame1)
-            {
-                try
-                {
-                    if (frame1 != null)
-                    {
-                        _frame1 = (Bitmap)frame1.Clone();
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Log.WriteLine(ex.ToString());
-                }
-            }
-
-            if (_frame1 != null)
-            {
-                //Log.WriteLine("render frame 1");
-                try
-                {
-                    //Log.WriteLine("render frame 1: start");
-                    _graphics.DrawImage(_frame1, settings.Frame1_X, settings.Frame1_Y, settings.Frame1_Width, settings.Frame1_Height);
-                    //Log.WriteLine("render frame 1: done");
-                }
-                catch (Exception ex)
-                {
-                    Log.WriteLine(ex.ToString());
-                }
-                finally
-                {
-                    _frame1.Dispose();
-                }
-            }
-
-            if (settings.VideoMixingMode != Settings.VideoMode.Single)
-            {
-                // render frame2 which comes from videoDevive2's thread, we need to lock it
-                Bitmap _frame2 = null;
-                lock (syncFrame2)
+#endif
+                // render frame1 which comes from videoDevive1's thread, we need to lock it
+                Bitmap _frame1 = null;
+                lock (syncFrame1)
                 {
                     try
                     {
-                        if (frame2 != null)
+                        if (frame1 != null)
                         {
-                            _frame2 = (Bitmap)frame2.Clone();
+                            _frame1 = (Bitmap)frame1.Clone();
                         }
                     }
                     catch (Exception ex)
@@ -628,14 +646,55 @@ namespace VACamera
                     }
                 }
 
-                if (_frame2 != null)
+                if (_frame1 != null)
                 {
-                    //Log.WriteLine("render frame 2");
                     try
                     {
-                        //Log.WriteLine("render frame 2: start");
-                        _graphics.DrawImage(_frame2, settings.Frame2_X, settings.Frame2_Y, settings.Frame2_Width, settings.Frame2_Height);
-                        //Log.WriteLine("render frame 2: done");
+#if USE_DIRECT_MEMORY_ACCESS
+                        // get raw data of frame 1
+                        BitmapData bitmapData_frame1 = _frame1.LockBits(
+                            new Rectangle(0, 0, _frame1.Width, _frame1.Height),
+                            ImageLockMode.ReadOnly,
+                            _frame1.PixelFormat);
+                        byte* ptrFirstPixel_frame1 = (byte*)bitmapData_frame1.Scan0;
+
+                        if (settings.VideoMixingMode == Settings.VideoMode.Single
+                            || settings.VideoMixingMode == Settings.VideoMode.Overlay)
+                        {
+                            // copy all pixels of frame 1 to video frame
+                            Parallel.For(0, bitmapData_videoFrame.Height, y =>
+                            {
+                                byte* currentLine_videoFrame = ptrFirstPixel_videoFrame + (y * bitmapData_videoFrame.Stride);
+                                byte* currentLine_frame1 = ptrFirstPixel_frame1 + (y * bitmapData_frame1.Stride);
+                                for (int x = 0; x < bitmapData_videoFrame.Stride; x++)
+                                {
+                                    currentLine_videoFrame[x] = currentLine_frame1[x];
+                                };
+                            });
+                        }
+                        else
+                        {
+                            // copy a half of pixels of frame 1 to video frame
+                            Parallel.For(0, bitmapData_videoFrame.Height, y =>
+                            {
+                                byte* currentLine_videoFrame = ptrFirstPixel_videoFrame + (y * bitmapData_videoFrame.Stride);
+                                byte* currentLine_frame1 = ptrFirstPixel_frame1 + (y * bitmapData_frame1.Stride);
+                                int u = 0;
+                                int v = 0;
+                                for (int x = 0; x < bitmapData_videoFrame.Width / 2; x++)
+                                {
+                                    currentLine_videoFrame[u++] = currentLine_frame1[v++];
+                                    currentLine_videoFrame[u++] = currentLine_frame1[v++];
+                                    currentLine_videoFrame[u++] = currentLine_frame1[v++];
+                                    v += 3;
+                                };
+                            });
+                        }
+
+                        _frame1.UnlockBits(bitmapData_frame1);
+#else
+                    _graphics.DrawImage(_frame1, settings.Frame1_X, settings.Frame1_Y, settings.Frame1_Width, settings.Frame1_Height);
+#endif
                     }
                     catch (Exception ex)
                     {
@@ -643,16 +702,102 @@ namespace VACamera
                     }
                     finally
                     {
-                        _frame2.Dispose();
+                        _frame1.Dispose();
                     }
                 }
-            }
 
+                if (settings.VideoMixingMode != Settings.VideoMode.Single)
+                {
+                    // render frame2 which comes from videoDevive2's thread, we need to lock it
+                    Bitmap _frame2 = null;
+                    lock (syncFrame2)
+                    {
+                        try
+                        {
+                            if (frame2 != null)
+                            {
+                                _frame2 = (Bitmap)frame2.Clone();
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.WriteLine(ex.ToString());
+                        }
+                    }
+
+                    if (_frame2 != null)
+                    {
+                        try
+                        {
+#if USE_DIRECT_MEMORY_ACCESS
+                            // get raw data of frame 2
+                            BitmapData bitmapData_frame2 = _frame2.LockBits(
+                                new Rectangle(0, 0, _frame2.Width, _frame2.Height),
+                                ImageLockMode.ReadOnly,
+                                _frame2.PixelFormat);
+                            byte* ptrFirstPixel_frame2 = (byte*)bitmapData_frame2.Scan0;
+
+                            if (settings.VideoMixingMode == Settings.VideoMode.SideBySide)
+                            {
+                                // copy a half of pixels of frame 2 to video frame
+                                Parallel.For(0, bitmapData_videoFrame.Height, y =>
+                                {
+                                    byte* currentLine_videoFrame = ptrFirstPixel_videoFrame + (y * bitmapData_videoFrame.Stride);
+                                    byte* currentLine_frame2 = ptrFirstPixel_frame2 + (y * bitmapData_frame2.Stride);
+                                    int u = (bitmapData_videoFrame.Width / 2) * 3;
+                                    int v = 0;
+                                    for (int x = 0; x < bitmapData_videoFrame.Width / 2; x++)
+                                    {
+                                        currentLine_videoFrame[u++] = currentLine_frame2[v++];
+                                        currentLine_videoFrame[u++] = currentLine_frame2[v++];
+                                        currentLine_videoFrame[u++] = currentLine_frame2[v++];
+                                        v += 3;
+                                    };
+                                });
+                            }
+                            else
+                            {
+                                // start copy at overlay position only
+                                Parallel.For(0, 240, y =>
+                                {
+                                    byte* currentLine_videoFrame = ptrFirstPixel_videoFrame + ((470 + y) * bitmapData_videoFrame.Stride);
+                                    byte* currentLine_frame2 = ptrFirstPixel_frame2 + ((y * 3) * bitmapData_frame2.Stride);
+                                    int u = 844 * 3;
+                                    int v = 0;
+                                    for (int x = 0; x < 426; x++)
+                                    {
+                                        currentLine_videoFrame[u++] = currentLine_frame2[v++];
+                                        currentLine_videoFrame[u++] = currentLine_frame2[v++];
+                                        currentLine_videoFrame[u++] = currentLine_frame2[v++];
+                                        v += 3;
+                                    };
+                                });
+                            }
+                            _frame2.UnlockBits(bitmapData_frame2);
+#else
+                        _graphics.DrawImage(_frame2, settings.Frame2_X, settings.Frame2_Y, settings.Frame2_Width, settings.Frame2_Height);
+#endif
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.WriteLine(ex.ToString());
+                        }
+                        finally
+                        {
+                            _frame2.Dispose();
+                        }
+                    }
+                }
+#if USE_DIRECT_MEMORY_ACCESS
+                _videoFrame.UnlockBits(bitmapData_videoFrame);
+            }
+#endif
             // add text
+#if !USE_DIRECT_MEMORY_ACCESS
             _graphics.CompositingMode = CompositingMode.SourceOver;
+#endif
             try
             {
-                //Log.WriteLine("render text: start");
                 // TopLeft: Name1
                 _graphics.DrawString(sessionInfo.Name1, textFont, Brushes.Red, textLine1);
                 // TopRight: Name 2
@@ -663,7 +808,6 @@ namespace VACamera
                 // BottomRight: Name 5 and DateTime
                 _graphics.DrawString(sessionInfo.Name5, textFont, Brushes.Red, textLine2, textDirectionRTL);
                 _graphics.DrawString(DateTime.Now.ToString("HH:mm:ss dd/MM/yyyy"), textFont, Brushes.Red, textLine3, textDirectionRTL);
-                //Log.WriteLine("render text: done");
             }
             catch (Exception ex)
             {
@@ -671,12 +815,10 @@ namespace VACamera
             }
 
             // show preview in UI thread, need to clone it, and then MUST invoke the UI thread
-            //Log.WriteLine("update preview: start");
             if (pictureFrame != null)
             {
                 UpdateLiveImageInvoker(pictureFrame, (Bitmap)_videoFrame.Clone());
             }
-            //Log.WriteLine("update preview: done");
 
             // write frame if needed
             if (videoRecordState == VideoRecordState.RECORDING)
@@ -687,7 +829,6 @@ namespace VACamera
                 {
                     try
                     {
-                        //Log.WriteLine("write frame: start");
                         if (lastVideoFrameTime == DateTime.MinValue)
                         {
                             videoFileWriter.WriteVideoFrame(_videoFrame);
@@ -699,7 +840,6 @@ namespace VACamera
                             TimeSpan timeSpan = now - lastVideoFrameTime;
                             videoFileWriter.WriteVideoFrame(_videoFrame, timeSpan);
                         }
-                        //Log.WriteLine("write frame: done");
                     }
                     catch (Exception ex)
                     {
@@ -712,7 +852,15 @@ namespace VACamera
             stopWatch.Stop();
             int timeLeft = settings.VideoFrameDuration - (int)stopWatch.Elapsed.TotalMilliseconds;
 
-            Log.WriteLine("Used: " + stopWatch.Elapsed.TotalMilliseconds + " ms, Free: " + timeLeft + " ms");
+#if !USE_SLOW_PC
+            totalRenderTime += stopWatch.Elapsed.TotalMilliseconds;
+            if (renderCount == 100)
+            {
+                Log.WriteLine(renderCount + " frames in average " + totalRenderTime / renderCount + " ms");
+                renderCount = 0;
+                totalRenderTime = 0;
+            }
+#endif
             if (timeLeft > 0)
             {
                 Thread.Sleep(timeLeft);
@@ -1065,44 +1213,6 @@ namespace VACamera
         {
             recordTime++;
             UpdateRecordTime();
-        }
-
-        private void timerFPS_Tick(object sender, EventArgs e)
-        {
-            //isTickRender = true;
-
-            int framesReceived1 = 0;
-            int framesReceived2 = 0;
-
-            // get number of frames for the last second
-            if (videoDevice1 != null)
-            {
-                framesReceived1 = videoDevice1.FramesReceived;
-            }
-
-            if (videoDevice2 != null)
-            {
-                framesReceived2 = videoDevice2.FramesReceived;
-            }
-
-            if (stopWatchFPS == null)
-            {
-                stopWatchFPS = new Stopwatch();
-                stopWatchFPS.Start();
-            }
-            else
-            {
-                stopWatchFPS.Stop();
-
-                float fps1 = 1000.0f * framesReceived1 / stopWatchFPS.ElapsedMilliseconds;
-                float fps2 = 1000.0f * framesReceived2 / stopWatchFPS.ElapsedMilliseconds;
-
-                txtCamFps1.Text = fps1.ToString("F2") + " fps";
-                txtCamFps2.Text = fps2.ToString("F2") + " fps";
-
-                stopWatchFPS.Reset();
-                stopWatchFPS.Start();
-            }
         }
 
         private void FormMain_KeyDown(object sender, KeyEventArgs e)

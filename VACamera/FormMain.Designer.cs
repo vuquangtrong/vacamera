@@ -42,9 +42,6 @@ namespace VACamera
             this.txtTimeLeft = new System.Windows.Forms.Label();
             this.label5 = new System.Windows.Forms.Label();
             this.timerRecord = new System.Windows.Forms.Timer(this.components);
-            this.timerFPS = new System.Windows.Forms.Timer(this.components);
-            this.txtCamFps1 = new System.Windows.Forms.Label();
-            this.txtCamFps2 = new System.Windows.Forms.Label();
             this.signalRecord = new System.Windows.Forms.PictureBox();
             this.btnWriteDisk = new System.Windows.Forms.Button();
             this.btnReplay = new System.Windows.Forms.Button();
@@ -148,30 +145,6 @@ namespace VACamera
             this.timerRecord.Interval = 1000;
             this.timerRecord.Tick += new System.EventHandler(this.timerRecord_Tick);
             // 
-            // timerFPS
-            // 
-            this.timerFPS.Interval = 1000;
-            this.timerFPS.Tick += new System.EventHandler(this.timerFPS_Tick);
-            // 
-            // txtCamFps1
-            // 
-            this.txtCamFps1.Font = new System.Drawing.Font("Segoe UI", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtCamFps1.Location = new System.Drawing.Point(0, 490);
-            this.txtCamFps1.Name = "txtCamFps1";
-            this.txtCamFps1.Size = new System.Drawing.Size(71, 21);
-            this.txtCamFps1.TabIndex = 5;
-            this.txtCamFps1.Text = "00.00 fps";
-            this.txtCamFps1.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
-            // 
-            // txtCamFps2
-            // 
-            this.txtCamFps2.Font = new System.Drawing.Font("Segoe UI", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtCamFps2.Location = new System.Drawing.Point(937, 492);
-            this.txtCamFps2.Name = "txtCamFps2";
-            this.txtCamFps2.Size = new System.Drawing.Size(71, 21);
-            this.txtCamFps2.TabIndex = 5;
-            this.txtCamFps2.Text = "00.00 fps";
-            // 
             // signalRecord
             // 
             this.signalRecord.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
@@ -268,8 +241,6 @@ namespace VACamera
             this.ClientSize = new System.Drawing.Size(1008, 561);
             this.ControlBox = false;
             this.Controls.Add(this.signalRecord);
-            this.Controls.Add(this.txtCamFps2);
-            this.Controls.Add(this.txtCamFps1);
             this.Controls.Add(this.txtTimeLeft);
             this.Controls.Add(this.txtTimeRun);
             this.Controls.Add(this.label5);
@@ -323,9 +294,6 @@ namespace VACamera
         private System.Windows.Forms.Label label5;
         private System.Windows.Forms.PictureBox pictureFrame;
         private System.Windows.Forms.Timer timerRecord;
-        private System.Windows.Forms.Timer timerFPS;
-        private System.Windows.Forms.Label txtCamFps1;
-        private System.Windows.Forms.Label txtCamFps2;
         private System.Windows.Forms.PictureBox signalRecord;
     }
 }

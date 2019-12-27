@@ -243,6 +243,12 @@ namespace VACamera
             Settings.SetVideoBitRate(listBitRate.Text);
         }
 
+        private void listBitRate_TextChanged(object sender, EventArgs e)
+        {
+            Log.WriteLine("listBitRate = " + listBitRate.Text);
+            Settings.SetVideoBitRate(listBitRate.Text);
+        }
+
         private void listFrameRate_SelectedIndexChanged(object sender, EventArgs e)
         {
             Log.WriteLine("listFrameRate = " + listFrameRate.Text);

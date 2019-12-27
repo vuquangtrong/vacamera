@@ -39,7 +39,7 @@ namespace VACamera
         public string Camera1_InputPath { get; private set; } /* Default */
         public string Camera2_InputPath { get; private set; } /* Default */
         public VideoFormat VideoOutputFormat { get; private set; } /* MPEG4 */
-        public int VideoBitRate { get; private set; } /* 3 Mbps */
+        public int VideoBitRate { get; private set; } /* 1.5 Mbps */
         public int VideoFrameRate { get; private set; } /* 24 fps */
         public int VideoFrameDuration { get; private set; } /* 1000/30 */
 
@@ -289,7 +289,7 @@ namespace VACamera
         {
             if (rate == null || rate.Equals(""))
             {
-                VideoBitRate = 3000 * 1000;
+                VideoBitRate = 1500 * 1000;
             }
             else
             {
@@ -299,7 +299,7 @@ namespace VACamera
                 }
                 catch (Exception ex)
                 {
-                    VideoBitRate = 3000 * 1000;
+                    VideoBitRate = 1500 * 1000;
                     Log.WriteLine(ex.ToString());
                 }
             }

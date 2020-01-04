@@ -13,11 +13,11 @@ namespace VACamera
             SessionInfo = new SessionInfo();
             InitializeComponent();
 
-            textName1.Text = "Thông tin 1";
-            textName2.Text = "Thông tin 2";
-            textName3.Text = "Thông tin 3";
-            textName4.Text = "Thông tin 4";
-            textName5.Text = "Thông tin 5";
+            //textName1.Text = "Thông tin 1";
+            //textName2.Text = "Thông tin 2";
+            //textName3.Text = "Thông tin 3";
+            //textName4.Text = "Thông tin 4";
+            //textName5.Text = "Thông tin 5";
 
             Hide();
         }
@@ -101,13 +101,21 @@ namespace VACamera
 
         private void button2_Click(object sender, EventArgs e)
         {
-            DialogResult = DialogResult.Cancel;
-            Close();
+            if (MessageBox.Show("Thoát ứng dụng và Tắt máy?", "Cảnh báo", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+            {
+                System.Windows.Forms.Application.Exit();
+            }
+            //Close();
         }
 
         private void timer1_Tick(object sender, EventArgs e)
         {
             textDateTime.Text = DateTime.Now.ToString("HH:mm:ss dd/MM/yyyy");
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+            System.Diagnostics.Process.Start("osk.exe");
         }
     }
 }

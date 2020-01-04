@@ -48,6 +48,7 @@
             this.textName1 = new System.Windows.Forms.TextBox();
             this.label1 = new System.Windows.Forms.Label();
             this.timer1 = new System.Windows.Forms.Timer(this.components);
+            this.button3 = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.groupBox1.SuspendLayout();
             this.SuspendLayout();
@@ -65,6 +66,7 @@
             // 
             // groupBox1
             // 
+            this.groupBox1.Controls.Add(this.button3);
             this.groupBox1.Controls.Add(this.label7);
             this.groupBox1.Controls.Add(this.txtLicense);
             this.groupBox1.Controls.Add(this.button2);
@@ -229,6 +231,16 @@
             this.timer1.Interval = 1000;
             this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
             // 
+            // button3
+            // 
+            this.button3.Location = new System.Drawing.Point(412, 476);
+            this.button3.Name = "button3";
+            this.button3.Size = new System.Drawing.Size(120, 40);
+            this.button3.TabIndex = 10;
+            this.button3.Text = "&Bàn phím";
+            this.button3.UseVisualStyleBackColor = true;
+            this.button3.Click += new System.EventHandler(this.button3_Click);
+            // 
             // FormNewSession
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
@@ -274,5 +286,6 @@
         private System.Windows.Forms.Button button2;
         private System.Windows.Forms.Label txtLicense;
         private System.Windows.Forms.Label label7;
+        private System.Windows.Forms.Button button3;
     }
 }

@@ -14,7 +14,7 @@ namespace VACamera
         public string Name4 = "";
         public string Name5 = "";
         public string DateTime = "";
-        public int MaxTime = 60 * 60; // 1 hour
+        public int MaxTime = 60 * 60 * 4; // 4 hour, temp estimate
         public string License = "";
 
         override

@@ -1056,6 +1056,13 @@ namespace VACamera
         {
             if (MessageBox.Show("Thoát ứng dụng và tắt máy?", "Cảnh báo", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
             {
+                //Delete all file when exit
+                DirectoryInfo di = new DirectoryInfo(outputFolder);
+                foreach (FileInfo file in di.GetFiles())
+                {
+                    file.Delete();
+                }
+
                 Close();
                 //string command = "shutdown -s -t 0";
                 //Process process = new Process();
@@ -1072,37 +1079,47 @@ namespace VACamera
 
         private void newSessionToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Hide();
-
-            using (FormNewSession formNewSession = new FormNewSession())
+            if (MessageBox.Show("Tạo phiên làm việc mới?", "Cảnh báo", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
             {
-                if (formNewSession.ShowDialog(this) == DialogResult.OK)
+                Hide();
+
+                using (FormNewSession formNewSession = new FormNewSession())
                 {
-                    sessionInfo = formNewSession.SessionInfo;
-                    settingsToolStripMenuItem.Enabled = true;
-                    PrepareRecord();
+                    if (formNewSession.ShowDialog(this) == DialogResult.OK)
+                    {
+                        sessionInfo = formNewSession.SessionInfo;
+                        settingsToolStripMenuItem.Enabled = true;
+                        PrepareRecord();
 
-                    // debug
-                    Log.WriteLine(sessionInfo.ToString());
-                    Log.WriteLine(settings.ToString());
+                        // debug
+                        Log.WriteLine(sessionInfo.ToString());
+                        Log.WriteLine(settings.ToString());
+                    }
                 }
+
+                //Delete all file when create new session
+                DirectoryInfo di = new DirectoryInfo(outputFolder);
+                foreach (FileInfo file in di.GetFiles())
+                {
+                    file.Delete();
+                }
+
+                Show();
+
+                if (videoDevice1 != null)
+                {
+                    btnRecord.Enabled = true;
+                    btnPause.Enabled = false;
+                    btnStop.Enabled = false;
+                    btnReplay.Enabled = false;
+                    btnWriteDisk.Enabled = false;
+                }
+
+                UpdateRecordTime(0);
+
+                //InitDevices(); // this process is slow
+                ResumePreview();
             }
-
-            Show();
-
-            if (videoDevice1 != null)
-            {
-                btnRecord.Enabled = true;
-                btnPause.Enabled = false;
-                btnStop.Enabled = false;
-                btnReplay.Enabled = false;
-                btnWriteDisk.Enabled = false;
-            }
-
-            UpdateRecordTime(0);
-
-            //InitDevices(); // this process is slow
-            ResumePreview();
         }
 
         private void settingsToolStripMenuItem_Click(object sender, EventArgs e)
@@ -1168,7 +1185,7 @@ namespace VACamera
             {
                 btnRecord.Enabled = false; // must start new session
                 btnPause.Enabled = false;
-                btnStop.Enabled = false;
+                btnStop.Enabled = true;
                 btnReplay.Enabled = true;
                 btnWriteDisk.Enabled = true;
 

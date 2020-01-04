@@ -172,27 +172,27 @@
             this.label5.AutoSize = true;
             this.label5.Location = new System.Drawing.Point(29, 231);
             this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(49, 21);
+            this.label5.Size = new System.Drawing.Size(85, 21);
             this.label5.TabIndex = 0;
-            this.label5.Text = "Tên 5:";
+            this.label5.Text = "Tên VA/VV:";
             // 
             // label4
             // 
             this.label4.AutoSize = true;
             this.label4.Location = new System.Drawing.Point(29, 181);
             this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(49, 21);
+            this.label4.Size = new System.Drawing.Size(55, 21);
             this.label4.TabIndex = 0;
-            this.label4.Text = "Tên 4:";
+            this.label4.Text = "ĐĐXH:";
             // 
             // label3
             // 
             this.label3.AutoSize = true;
             this.label3.Location = new System.Drawing.Point(29, 131);
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(49, 21);
+            this.label3.Size = new System.Drawing.Size(59, 21);
             this.label3.TabIndex = 0;
-            this.label3.Text = "Tên 3:";
+            this.label3.Text = "Tên ĐT:";
             // 
             // textName2
             // 
@@ -206,9 +206,9 @@
             this.label2.AutoSize = true;
             this.label2.Location = new System.Drawing.Point(29, 81);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(49, 21);
+            this.label2.Size = new System.Drawing.Size(34, 21);
             this.label2.TabIndex = 0;
-            this.label2.Text = "Tên 2:";
+            this.label2.Text = "ĐV:";
             // 
             // textName1
             // 
@@ -222,9 +222,9 @@
             this.label1.AutoSize = true;
             this.label1.Location = new System.Drawing.Point(29, 31);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(49, 21);
+            this.label1.Size = new System.Drawing.Size(69, 21);
             this.label1.TabIndex = 0;
-            this.label1.Text = "Tên 1:";
+            this.label1.Text = "Tên ĐTV:";
             // 
             // timer1
             // 

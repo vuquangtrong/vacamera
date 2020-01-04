@@ -1054,9 +1054,19 @@ namespace VACamera
 
         private void exitToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (MessageBox.Show("Thoát ứng dụng?", "Cảnh báo", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+            if (MessageBox.Show("Thoát ứng dụng và tắt máy?", "Cảnh báo", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
             {
                 Close();
+                //string command = "shutdown -s -t 0";
+                //Process process = new Process();
+                //ProcessStartInfo startInfo = new ProcessStartInfo();
+
+                //startInfo.WindowStyle = ProcessWindowStyle.Hidden;
+                //startInfo.FileName = "cmd.exe";
+                //startInfo.Arguments = "/C " + command;
+                //process.StartInfo = startInfo;
+                //process.Start();
+                //process.WaitForExit();
             }
         }
 
@@ -1125,7 +1135,7 @@ namespace VACamera
             {
                 btnRecord.Enabled = false;
                 btnPause.Enabled = true;
-                btnStop.Enabled = true;
+                btnStop.Enabled = false;
                 btnReplay.Enabled = false;
                 btnWriteDisk.Enabled = false;
 

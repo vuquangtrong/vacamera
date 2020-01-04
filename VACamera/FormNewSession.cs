@@ -1,6 +1,7 @@
 ﻿using Microsoft.Win32;
 using System;
 using System.Windows.Forms;
+using System.Diagnostics;
 
 namespace VACamera
 {
@@ -13,11 +14,11 @@ namespace VACamera
             SessionInfo = new SessionInfo();
             InitializeComponent();
 
-            //textName1.Text = "Thông tin 1";
-            //textName2.Text = "Thông tin 2";
-            //textName3.Text = "Thông tin 3";
-            //textName4.Text = "Thông tin 4";
-            //textName5.Text = "Thông tin 5";
+            textName1.Text = "ĐTV Nguyễn Văn Ánh";
+            textName2.Text = "ĐV Bộ Thông tin 23";
+            textName3.Text = "ĐT Phạm Băng Băng";
+            textName4.Text = "Loca Phòng 11 cục 22";
+            textName5.Text = "Về việc ông Băng làm tan băng";
 
             Hide();
         }
@@ -104,6 +105,16 @@ namespace VACamera
             if (MessageBox.Show("Thoát ứng dụng và Tắt máy?", "Cảnh báo", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
             {
                 System.Windows.Forms.Application.Exit();
+                //string command = "shutdown -s -t 0";
+                //Process process = new Process();
+                //ProcessStartInfo startInfo = new ProcessStartInfo();
+
+                //startInfo.WindowStyle = ProcessWindowStyle.Hidden;
+                //startInfo.FileName = "cmd.exe";
+                //startInfo.Arguments = "/C " + command;
+                //process.StartInfo = startInfo;
+                //process.Start();
+                //process.WaitForExit();
             }
             //Close();
         }

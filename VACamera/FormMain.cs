@@ -164,7 +164,7 @@ namespace VACamera
         {
             if (videoRecordState != VideoRecordState.IDLE)
             {
-                StopRecording();
+                StopRecording(false);
             }
             StopDevices();
             StopRender();
@@ -867,6 +867,27 @@ namespace VACamera
             }
         }
 
+        private void execv(string command)
+        {
+            Log.WriteLine(command);
+
+            Process process = new Process();
+            ProcessStartInfo startInfo = new ProcessStartInfo();
+
+            startInfo.WindowStyle = ProcessWindowStyle.Hidden;
+            startInfo.FileName = "cmd.exe";
+            startInfo.Arguments = "/C " + command;
+            process.StartInfo = startInfo;
+            process.Start();
+            process.WaitForExit();
+        }
+
+        private void add_file_to_record_list(string file, bool reset)
+        {
+            string command = "echo file '" + file + "' " + (reset ? ">" : ">>") + " records.txt";
+            execv(command);
+        }
+
         private void PrepareRecord()
         {
             recordPart = 0;
@@ -915,18 +936,7 @@ namespace VACamera
                 }
 
                 // track new file
-                string command = "echo file '" + outputFile + "' >> records.txt";
-                Log.WriteLine(command);
-
-                Process process = new Process();
-                ProcessStartInfo startInfo = new ProcessStartInfo();
-
-                startInfo.WindowStyle = ProcessWindowStyle.Hidden;
-                startInfo.FileName = "cmd.exe";
-                startInfo.Arguments = "/C " + command;
-                process.StartInfo = startInfo;
-                process.Start();
-                process.WaitForExit();
+                add_file_to_record_list(outputFile, false);
 
                 lastVideoFrameTime = DateTime.MinValue;
                 timerRecord.Start();
@@ -965,42 +975,43 @@ namespace VACamera
             }
         }
 
-        private void StopRecording()
+        private void StopRecording(bool temporary)
         {
             PauseRecording();
 
+            if (temporary)
+                Thread.Sleep(1000);
+
             Log.WriteLine(">>> MERGE VIDEO FILE");
-            outputFile = outputFolder + "\\" + sessionInfo.DateTime + videoExtension;
+            outputFile = outputFolder + "\\" + sessionInfo.DateTime + "_" + recordPart.ToString() + videoExtension;
 
             // join files
-            if (File.Exists("ffmpeg.exe"))
+            if (File.Exists("ffmpeg.exe") && recordPart > 1)
             {
                 String command = "ffmpeg.exe -f concat -safe 0 -i records.txt -c copy \"" + outputFile + "\"";
-                Log.WriteLine(command);
+                execv(command);
 
-                Process process = new Process();
-                ProcessStartInfo startInfo = new ProcessStartInfo();
+                add_file_to_record_list(outputFile, true);
+                recordPart++;
 
-                startInfo.WindowStyle = ProcessWindowStyle.Hidden;
-                startInfo.FileName = "cmd.exe";
-                startInfo.Arguments = "/C " + command;
-                process.StartInfo = startInfo;
-                process.Start();
-                process.WaitForExit();
+                Thread.Sleep(2000);
 
                 // remove segmented files
-                var dir = new DirectoryInfo(outputFolder);
-                foreach (var file in dir.EnumerateFiles(sessionInfo.DateTime + "_*" + videoExtension))
-                {
-                    try
-                    {
-                        file.Delete();
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.WriteLine(ex.ToString());
-                    }
-                }
+                //var dir = new DirectoryInfo(outputFolder);
+                //foreach (var file in dir.EnumerateFiles("*" + videoExtension))
+                //{
+                //    if (file.FullName.Equals(outputFile))
+                //        continue;
+
+                //    try
+                //    {
+                //        file.Delete();
+                //    }
+                //    catch (Exception ex)
+                //    {
+                //        Log.WriteLine(ex.ToString());
+                //    }
+                //}
             }
         }
 
@@ -1167,15 +1178,21 @@ namespace VACamera
         {
             if (videoRecordState == VideoRecordState.RECORDING)
             {
-                btnRecord.Enabled = true;
+
                 btnPause.Enabled = false;
+                signalRecord.BackgroundImage = global::VACamera.Properties.Resources.rec_pause;
+
+                StopRecording(true);
+                //PauseRecording();
+
+                btnRecord.Enabled = true;
                 btnStop.Enabled = true;
                 btnReplay.Enabled = true;
                 btnWriteDisk.Enabled = false;
 
-                signalRecord.BackgroundImage = global::VACamera.Properties.Resources.rec_pause;
 
-                PauseRecording();
+
+
             }
         }
 
@@ -1192,8 +1209,8 @@ namespace VACamera
                 settingsToolStripMenuItem.Enabled = true; // can change settings again
                 signalRecord.BackgroundImage = null;
 
-                StopRecording();
-                Thread.Sleep(1000);
+                //StopRecording(false);
+                //Thread.Sleep(1000);
 
                 //StopDevices(); // this method is slow
                 PausePreview();

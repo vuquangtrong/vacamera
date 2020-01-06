@@ -14,11 +14,11 @@ namespace VACamera
             SessionInfo = new SessionInfo();
             InitializeComponent();
 
-            textName1.Text = "ĐTV Nguyễn Văn Ánh";
-            textName2.Text = "ĐV Bộ Thông tin 23";
-            textName3.Text = "ĐT Phạm Băng Băng";
-            textName4.Text = "Loca Phòng 11 cục 22";
-            textName5.Text = "Về việc ông Băng làm tan băng";
+            //textName1.Text = "ĐTV Nguyễn Văn Ánh";
+            //textName2.Text = "ĐV Bộ Thông tin 23";
+            //textName3.Text = "ĐT Phạm Băng Băng";
+            //textName4.Text = "Loca Phòng 11 cục 22";
+            //textName5.Text = "Về việc ông Băng làm tan băng";
 
             Hide();
         }

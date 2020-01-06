@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "VACamera"
-#define MyAppVersion "1.2"
+#define MyAppVersion "1.5"
 #define MyAppPublisher "My Company, Inc."
 #define MyAppURL "http://www.example.com/"
 #define MyAppExeName "VACamera.exe"
@@ -32,7 +32,6 @@ WizardStyle=modern
 Root: HKCU; Subkey: "SOFTWARE\VACamera"; Flags: uninsdeletekey
 Root: HKCU; Subkey: "SOFTWARE\VACamera\Settings"; ValueType: string; ValueName: "Name"; ValueData: "{code:GetUser|Name}"
 Root: HKCU; Subkey: "SOFTWARE\VACamera\Settings"; ValueType: string; ValueName: "Company"; ValueData: "{code:GetUser|Company}"
-Root: HKCU; Subkey: "SOFTWARE\VACamera\Settings"; ValueType: string; ValueName: "Computer"; ValueData: "{sysuserinfoname}"
 
 [Code]
 var
@@ -107,6 +106,7 @@ Source: "bin\x86\Release\VACamera.application"; DestDir: "{app}"; Flags: ignorev
 Source: "bin\x86\Release\VACamera.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "bin\x86\Release\VACamera.exe.manifest"; DestDir: "{app}"; Flags: ignoreversion
 Source: "bin\x86\Release\ffmpeg.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "bin\x86\Release\osk.exe"; DestDir: "{app}"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]

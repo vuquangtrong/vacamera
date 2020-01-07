@@ -183,6 +183,7 @@
     <Compile Include="MediaItem\FileItem.cs" />
     <Compile Include="MediaItem\IMediaItem.cs" />
     <Compile Include="MediaItem\Win32.cs" />
+    <Compile Include="NavtiveMethods.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SessionInfo.cs" />

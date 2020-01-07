@@ -7,7 +7,7 @@ namespace VACamera
     {
         public static int VideoWidth = 1280;
         public static int VideoHeight = 720;
-        public static int VideoOverlayWidth = 426;
+        public static int VideoOverlayWidth = 320;
         public static int VideoOverlayHeight = 240;
         public static int VideoOverlayX = 1280 - 10 - VideoOverlayWidth;
         public static int VideoOverlayY = 720 - 10 - VideoOverlayHeight;

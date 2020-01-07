@@ -164,7 +164,7 @@ namespace VACamera
         {
             if (videoRecordState != VideoRecordState.IDLE)
             {
-                StopRecording();
+                StopRecording(false);
             }
             StopDevices();
             StopRender();
@@ -867,6 +867,27 @@ namespace VACamera
             }
         }
 
+        private void execv(string command)
+        {
+            Log.WriteLine(command);
+
+            Process process = new Process();
+            ProcessStartInfo startInfo = new ProcessStartInfo();
+
+            startInfo.WindowStyle = ProcessWindowStyle.Hidden;
+            startInfo.FileName = "cmd.exe";
+            startInfo.Arguments = "/C " + command;
+            process.StartInfo = startInfo;
+            process.Start();
+            process.WaitForExit();
+        }
+
+        private void add_file_to_record_list(string file, bool reset)
+        {
+            string command = "echo file '" + file + "' " + (reset ? ">" : ">>") + " records.txt";
+            execv(command);
+        }
+
         private void PrepareRecord()
         {
             recordPart = 0;
@@ -915,18 +936,7 @@ namespace VACamera
                 }
 
                 // track new file
-                string command = "echo file '" + outputFile + "' >> records.txt";
-                Log.WriteLine(command);
-
-                Process process = new Process();
-                ProcessStartInfo startInfo = new ProcessStartInfo();
-
-                startInfo.WindowStyle = ProcessWindowStyle.Hidden;
-                startInfo.FileName = "cmd.exe";
-                startInfo.Arguments = "/C " + command;
-                process.StartInfo = startInfo;
-                process.Start();
-                process.WaitForExit();
+                add_file_to_record_list(outputFile, false);
 
                 lastVideoFrameTime = DateTime.MinValue;
                 timerRecord.Start();
@@ -965,42 +975,43 @@ namespace VACamera
             }
         }
 
-        private void StopRecording()
+        private void StopRecording(bool temporary)
         {
             PauseRecording();
 
+            if (temporary)
+                Thread.Sleep(1000);
+
             Log.WriteLine(">>> MERGE VIDEO FILE");
-            outputFile = outputFolder + "\\" + sessionInfo.DateTime + videoExtension;
+            outputFile = outputFolder + "\\" + sessionInfo.DateTime + "_" + recordPart.ToString() + videoExtension;
 
             // join files
-            if (File.Exists("ffmpeg.exe"))
+            if (File.Exists("ffmpeg.exe") && recordPart > 1)
             {
                 String command = "ffmpeg.exe -f concat -safe 0 -i records.txt -c copy \"" + outputFile + "\"";
-                Log.WriteLine(command);
+                execv(command);
 
-                Process process = new Process();
-                ProcessStartInfo startInfo = new ProcessStartInfo();
+                add_file_to_record_list(outputFile, true);
+                recordPart++;
 
-                startInfo.WindowStyle = ProcessWindowStyle.Hidden;
-                startInfo.FileName = "cmd.exe";
-                startInfo.Arguments = "/C " + command;
-                process.StartInfo = startInfo;
-                process.Start();
-                process.WaitForExit();
+                Thread.Sleep(2000);
 
                 // remove segmented files
-                var dir = new DirectoryInfo(outputFolder);
-                foreach (var file in dir.EnumerateFiles(sessionInfo.DateTime + "_*" + videoExtension))
-                {
-                    try
-                    {
-                        file.Delete();
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.WriteLine(ex.ToString());
-                    }
-                }
+                //var dir = new DirectoryInfo(outputFolder);
+                //foreach (var file in dir.EnumerateFiles("*" + videoExtension))
+                //{
+                //    if (file.FullName.Equals(outputFile))
+                //        continue;
+
+                //    try
+                //    {
+                //        file.Delete();
+                //    }
+                //    catch (Exception ex)
+                //    {
+                //        Log.WriteLine(ex.ToString());
+                //    }
+                //}
             }
         }
 
@@ -1054,45 +1065,72 @@ namespace VACamera
 
         private void exitToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (MessageBox.Show("Thoát ứng dụng?", "Cảnh báo", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+            if (MessageBox.Show("Thoát ứng dụng và tắt máy?", "Cảnh báo", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
             {
+                //Delete all file when exit
+                DirectoryInfo di = new DirectoryInfo(outputFolder);
+                foreach (FileInfo file in di.GetFiles())
+                {
+                    file.Delete();
+                }
+
                 Close();
+                //string command = "shutdown -s -t 0";
+                //Process process = new Process();
+                //ProcessStartInfo startInfo = new ProcessStartInfo();
+
+                //startInfo.WindowStyle = ProcessWindowStyle.Hidden;
+                //startInfo.FileName = "cmd.exe";
+                //startInfo.Arguments = "/C " + command;
+                //process.StartInfo = startInfo;
+                //process.Start();
+                //process.WaitForExit();
             }
         }
 
         private void newSessionToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Hide();
-
-            using (FormNewSession formNewSession = new FormNewSession())
+            if (MessageBox.Show("Tạo phiên làm việc mới?", "Cảnh báo", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
             {
-                if (formNewSession.ShowDialog(this) == DialogResult.OK)
+                Hide();
+
+                using (FormNewSession formNewSession = new FormNewSession())
                 {
-                    sessionInfo = formNewSession.SessionInfo;
-                    settingsToolStripMenuItem.Enabled = true;
-                    PrepareRecord();
+                    if (formNewSession.ShowDialog(this) == DialogResult.OK)
+                    {
+                        sessionInfo = formNewSession.SessionInfo;
+                        settingsToolStripMenuItem.Enabled = true;
+                        PrepareRecord();
 
-                    // debug
-                    Log.WriteLine(sessionInfo.ToString());
-                    Log.WriteLine(settings.ToString());
+                        // debug
+                        Log.WriteLine(sessionInfo.ToString());
+                        Log.WriteLine(settings.ToString());
+                    }
                 }
+
+                //Delete all file when create new session
+                DirectoryInfo di = new DirectoryInfo(outputFolder);
+                foreach (FileInfo file in di.GetFiles())
+                {
+                    file.Delete();
+                }
+
+                Show();
+
+                if (videoDevice1 != null)
+                {
+                    btnRecord.Enabled = true;
+                    btnPause.Enabled = false;
+                    btnStop.Enabled = false;
+                    btnReplay.Enabled = false;
+                    btnWriteDisk.Enabled = false;
+                }
+
+                UpdateRecordTime(0);
+
+                //InitDevices(); // this process is slow
+                ResumePreview();
             }
-
-            Show();
-
-            if (videoDevice1 != null)
-            {
-                btnRecord.Enabled = true;
-                btnPause.Enabled = false;
-                btnStop.Enabled = false;
-                btnReplay.Enabled = false;
-                btnWriteDisk.Enabled = false;
-            }
-
-            UpdateRecordTime(0);
-
-            //InitDevices(); // this process is slow
-            ResumePreview();
         }
 
         private void settingsToolStripMenuItem_Click(object sender, EventArgs e)
@@ -1125,7 +1163,7 @@ namespace VACamera
             {
                 btnRecord.Enabled = false;
                 btnPause.Enabled = true;
-                btnStop.Enabled = true;
+                btnStop.Enabled = false;
                 btnReplay.Enabled = false;
                 btnWriteDisk.Enabled = false;
 
@@ -1140,15 +1178,21 @@ namespace VACamera
         {
             if (videoRecordState == VideoRecordState.RECORDING)
             {
-                btnRecord.Enabled = true;
+
                 btnPause.Enabled = false;
+                signalRecord.BackgroundImage = global::VACamera.Properties.Resources.rec_pause;
+
+                StopRecording(true);
+                //PauseRecording();
+
+                btnRecord.Enabled = true;
                 btnStop.Enabled = true;
                 btnReplay.Enabled = true;
                 btnWriteDisk.Enabled = false;
 
-                signalRecord.BackgroundImage = global::VACamera.Properties.Resources.rec_pause;
 
-                PauseRecording();
+
+
             }
         }
 
@@ -1158,15 +1202,15 @@ namespace VACamera
             {
                 btnRecord.Enabled = false; // must start new session
                 btnPause.Enabled = false;
-                btnStop.Enabled = false;
+                btnStop.Enabled = true;
                 btnReplay.Enabled = true;
                 btnWriteDisk.Enabled = true;
 
                 settingsToolStripMenuItem.Enabled = true; // can change settings again
                 signalRecord.BackgroundImage = null;
 
-                StopRecording();
-                Thread.Sleep(1000);
+                //StopRecording(false);
+                //Thread.Sleep(1000);
 
                 //StopDevices(); // this method is slow
                 PausePreview();

@@ -100,7 +100,7 @@ namespace VACamera
         {
             if (rate == null || rate.Equals(""))
             {
-                AudioBitRate = 160 * 1000;
+                AudioBitRate = 128 * 1000;
             }
             else
             {
@@ -110,7 +110,7 @@ namespace VACamera
                 }
                 catch (Exception ex)
                 {
-                    AudioBitRate = 160 * 1000;
+                    AudioBitRate = 128 * 1000;
                     Log.WriteLine(ex.ToString());
                 }
             }

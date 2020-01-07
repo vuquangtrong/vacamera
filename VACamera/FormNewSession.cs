@@ -2,6 +2,7 @@
 using System;
 using System.Windows.Forms;
 using System.Diagnostics;
+using System.IO;
 
 namespace VACamera
 {
@@ -14,11 +15,11 @@ namespace VACamera
             SessionInfo = new SessionInfo();
             InitializeComponent();
 
-            //textName1.Text = "ĐTV Nguyễn Văn Ánh";
-            //textName2.Text = "ĐV Bộ Thông tin 23";
-            //textName3.Text = "ĐT Phạm Băng Băng";
-            //textName4.Text = "Loca Phòng 11 cục 22";
-            //textName5.Text = "Về việc ông Băng làm tan băng";
+            textName1.Text = "Thông tin 1";
+            textName2.Text = "Thông tin 2";
+            textName3.Text = "Thông tin 3";
+            textName4.Text = "Thông tin 4";
+            textName5.Text = "Thông tin 5";
 
             Hide();
         }
@@ -126,7 +127,42 @@ namespace VACamera
 
         private void button3_Click(object sender, EventArgs e)
         {
-            System.Diagnostics.Process.Start("osk.exe");
+            string OSKpath64 = getOskPath(@"C:\Windows\WinSxS");
+            if (string.IsNullOrWhiteSpace(OSKpath64))
+            {
+                OSKpath64 = @"osk.exe";
+            }
+            string OSKpath32 = @"C:\Windows\System32\osk.exe";
+            if (!File.Exists(OSKpath32))
+            {
+                OSKpath32 = @"osk.exe";
+            }
+            System.Diagnostics.Process.Start((Environment.Is64BitOperatingSystem) ? OSKpath64 : OSKpath32);
+        }
+
+        private string getOskPath(string dir)
+        {
+            string path = Path.Combine(dir, "osk.exe");
+            if (File.Exists(path))
+            {
+                Process p = System.Diagnostics.Process.Start(path);
+                if (NativeMethods.IsWin64Emulator(p))
+                {
+                    path = string.Empty;
+                }
+                p.Kill();
+                return path;
+            }
+            DirectoryInfo di = new DirectoryInfo(dir);
+            foreach (DirectoryInfo subDir in di.GetDirectories())
+            {
+                path = getOskPath(Path.Combine(dir, subDir.Name));
+                if (!string.IsNullOrWhiteSpace(path))
+                {
+                    return path;
+                }
+            }
+            return string.Empty;
         }
     }
 }

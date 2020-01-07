@@ -1022,6 +1022,7 @@ namespace VACamera
 
         private void StopRecording(bool temporary)
         {
+            //TODO: Check sometime this hold file, did not finish file, so merge file not correct
             PauseRecording();
 
             if (temporary)
@@ -1047,7 +1048,7 @@ namespace VACamera
                 //add_file_to_record_list(outputFile, true);
                 //recordPart++;
 
-                Thread.Sleep(2000);
+                Thread.Sleep(1000);
 
                 // remove segmented files
                 //var dir = new DirectoryInfo(outputFolder);
@@ -1304,8 +1305,9 @@ namespace VACamera
                 }
                 else if (result == DialogResult.No)
                 {
-                    MessageBox.Show("Kết thúc phiên làm việc và dừng chương trình!");
-                    Close();
+                    // Can return main form and click to write DVD again if one DVD fail
+                    //MessageBox.Show("Kết thúc phiên làm việc và dừng chương trình!");
+                    //Close();
                 }
                 else if (result == DialogResult.Cancel)
                 {

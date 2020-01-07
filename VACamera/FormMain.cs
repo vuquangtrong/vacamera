@@ -5,9 +5,15 @@
  
 Execution Time to render 1 video frame
 
+FrameSize: 1280x720
 Mode    Single      Side2Side       Overlay
 GDI+    3.7 ms      7   ms          5.4 ms
 Direct  2.6 ms      3.9 ms          3.6 ms
+
+FrameSize: Dynamic
+Mode    Single      Side2Side       Overlay
+GDI+    3.7 ms      7   ms          5.4 ms
+Direct  2.6 ms      2.7 ms          2.9 ms
 
 */
 
@@ -202,14 +208,25 @@ namespace VACamera
             }
         }
 
-        private VideoCapabilities selectResolution(VideoCaptureDevice device)
+        private VideoCapabilities selectResolution(VideoCaptureDevice device, int width, int height, int fps)
         {
             foreach (var cap in device.VideoCapabilities)
             {
-                if (cap.FrameSize.Width == 1280
-                    && cap.FrameSize.Height == 720)
+                if (cap.FrameSize.Width == width
+                    && cap.FrameSize.Height == height
+                    && cap.AverageFrameRate == fps)
                     return cap;
             }
+
+            // not match both framesize and fps, then only need framesize
+            foreach (var cap in device.VideoCapabilities)
+            {
+                if (cap.FrameSize.Width == width
+                    && cap.FrameSize.Height == height)
+                    return cap;
+            }
+
+            // return default
             return device.VideoCapabilities[0];
         }
 
@@ -310,11 +327,20 @@ namespace VACamera
                     videoDevice1 = new VideoCaptureDevice(device1_MonikerString);
                     for (int i = 0; i < videoDevice1.VideoCapabilities.Length; i++)
                     {
-                        Log.WriteLine("VideoCapabilities " + i);
-                        Log.WriteLine("Resolution = " + videoDevice1.VideoCapabilities[i].FrameSize.ToString());
+                        Log.WriteLine("[" + i + "]" +
+                            videoDevice1.VideoCapabilities[i].FrameSize.ToString() + " @ " +
+                            videoDevice1.VideoCapabilities[i].AverageFrameRate.ToString());
                     }
 
-                    videoDevice1.VideoResolution = selectResolution(videoDevice1);
+                    if (settings.VideoMixingMode == Settings.VideoMode.Single)
+                    {
+                        videoDevice1.VideoResolution = selectResolution(videoDevice1, 1280, 720, 24);
+                    }
+                    else if (settings.VideoMixingMode == Settings.VideoMode.SideBySide)
+                    {
+                        videoDevice1.VideoResolution = selectResolution(videoDevice1, 640, 480, 24);
+                    }
+
                     //videoDevice1.DesiredAverageTimePerFrame = 330000; // ns
                     videoDevice1.NewFrame += VideoDevice1_NewFrame;
                     videoDevice1.Start();
@@ -339,10 +365,20 @@ namespace VACamera
                         videoDevice2 = new VideoCaptureDevice(device2_MonikerString);
                         for (int i = 0; i < videoDevice2.VideoCapabilities.Length; i++)
                         {
-                            Log.WriteLine("VideoCapabilities " + i);
-                            Log.WriteLine("Resolution = " + videoDevice2.VideoCapabilities[i].FrameSize.ToString());
+                            Log.WriteLine("[" + i + "]" +
+                                videoDevice2.VideoCapabilities[i].FrameSize.ToString() + " @ " +
+                                videoDevice2.VideoCapabilities[i].AverageFrameRate.ToString());
                         }
-                        videoDevice2.VideoResolution = selectResolution(videoDevice2);
+
+                        if (settings.VideoMixingMode == Settings.VideoMode.SideBySide)
+                        {
+                            videoDevice2.VideoResolution = selectResolution(videoDevice2, 640, 480, 24);
+                        }
+                        else if (settings.VideoMixingMode == Settings.VideoMode.Overlay)
+                        {
+                            videoDevice2.VideoResolution = selectResolution(videoDevice2, 320, 240, 24);
+                        }
+
                         //videoDevice2.DesiredAverageTimePerFrame = 330000; // ns
                         videoDevice2.NewFrame += VideoDevice2_NewFrame;
                         videoDevice2.Start();
@@ -420,6 +456,8 @@ namespace VACamera
 
         private void StopDevices()
         {
+            PausePreview();
+
             try
             {
                 if (audioDevice != null)
@@ -658,8 +696,10 @@ namespace VACamera
                             _frame1.PixelFormat);
                         byte* ptrFirstPixel_frame1 = (byte*)bitmapData_frame1.Scan0;
 
-                        if (settings.VideoMixingMode == Settings.VideoMode.Single
+                        if ((settings.VideoMixingMode == Settings.VideoMode.Single
                             || settings.VideoMixingMode == Settings.VideoMode.Overlay)
+                            && _frame1.Width == 1280
+                            && _frame1.Height == 720)
                         {
                             // copy all pixels of frame 1 to video frame
                             Parallel.For(0, bitmapData_videoFrame.Height, y =>
@@ -672,13 +712,15 @@ namespace VACamera
                                 };
                             });
                         }
-                        else
+                        else if (settings.VideoMixingMode == Settings.VideoMode.SideBySide
+                            && _frame1.Width == 640
+                            && _frame1.Height == 480)
                         {
                             // copy a half of pixels of frame 1 to video frame
                             Parallel.For(0, bitmapData_videoFrame.Height, y =>
                             {
                                 byte* currentLine_videoFrame = ptrFirstPixel_videoFrame + (y * bitmapData_videoFrame.Stride);
-                                byte* currentLine_frame1 = ptrFirstPixel_frame1 + (y * bitmapData_frame1.Stride);
+                                byte* currentLine_frame1 = ptrFirstPixel_frame1 + ((y * 2 / 3) * bitmapData_frame1.Stride);
                                 int u = 0;
                                 int v = 0;
                                 for (int x = 0; x < bitmapData_videoFrame.Width / 2; x++)
@@ -686,11 +728,9 @@ namespace VACamera
                                     currentLine_videoFrame[u++] = currentLine_frame1[v++];
                                     currentLine_videoFrame[u++] = currentLine_frame1[v++];
                                     currentLine_videoFrame[u++] = currentLine_frame1[v++];
-                                    v += 3;
                                 };
                             });
                         }
-
                         _frame1.UnlockBits(bitmapData_frame1);
 #else
                     _graphics.DrawImage(_frame1, settings.Frame1_X, settings.Frame1_Y, settings.Frame1_Width, settings.Frame1_Height);
@@ -737,13 +777,15 @@ namespace VACamera
                                 _frame2.PixelFormat);
                             byte* ptrFirstPixel_frame2 = (byte*)bitmapData_frame2.Scan0;
 
-                            if (settings.VideoMixingMode == Settings.VideoMode.SideBySide)
+                            if (settings.VideoMixingMode == Settings.VideoMode.SideBySide
+                                && _frame2.Width == 640
+                                && _frame2.Height == 480)
                             {
                                 // copy a half of pixels of frame 2 to video frame
                                 Parallel.For(0, bitmapData_videoFrame.Height, y =>
                                 {
                                     byte* currentLine_videoFrame = ptrFirstPixel_videoFrame + (y * bitmapData_videoFrame.Stride);
-                                    byte* currentLine_frame2 = ptrFirstPixel_frame2 + (y * bitmapData_frame2.Stride);
+                                    byte* currentLine_frame2 = ptrFirstPixel_frame2 + ((y * 2 / 3) * bitmapData_frame2.Stride);
                                     int u = (bitmapData_videoFrame.Width / 2) * 3;
                                     int v = 0;
                                     for (int x = 0; x < bitmapData_videoFrame.Width / 2; x++)
@@ -751,25 +793,25 @@ namespace VACamera
                                         currentLine_videoFrame[u++] = currentLine_frame2[v++];
                                         currentLine_videoFrame[u++] = currentLine_frame2[v++];
                                         currentLine_videoFrame[u++] = currentLine_frame2[v++];
-                                        v += 3;
                                     };
                                 });
                             }
-                            else
+                            else if (settings.VideoMixingMode == Settings.VideoMode.Overlay
+                                && _frame2.Width == 320
+                                && _frame2.Height == 240)
                             {
                                 // start copy at overlay position only
                                 Parallel.For(0, 240, y =>
                                 {
                                     byte* currentLine_videoFrame = ptrFirstPixel_videoFrame + ((470 + y) * bitmapData_videoFrame.Stride);
-                                    byte* currentLine_frame2 = ptrFirstPixel_frame2 + ((y * 3) * bitmapData_frame2.Stride);
-                                    int u = 844 * 3;
+                                    byte* currentLine_frame2 = ptrFirstPixel_frame2 + (y * bitmapData_frame2.Stride);
+                                    int u = 950 * 3;
                                     int v = 0;
-                                    for (int x = 0; x < 426; x++)
+                                    for (int x = 0; x < 320; x++)
                                     {
                                         currentLine_videoFrame[u++] = currentLine_frame2[v++];
                                         currentLine_videoFrame[u++] = currentLine_frame2[v++];
                                         currentLine_videoFrame[u++] = currentLine_frame2[v++];
-                                        v += 3;
                                     };
                                 });
                             }
@@ -856,7 +898,8 @@ namespace VACamera
             totalRenderTime += stopWatch.Elapsed.TotalMilliseconds;
             if (renderCount == 100)
             {
-                Log.WriteLine(renderCount + " frames in average " + totalRenderTime / renderCount + " ms");
+                double average_frame_time = totalRenderTime / renderCount;
+                Log.WriteLine(renderCount + " frames in average " + average_frame_time + " ms");
                 renderCount = 0;
                 totalRenderTime = 0;
             }
@@ -1135,6 +1178,8 @@ namespace VACamera
 
         private void settingsToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            PausePreview();
+
             using (FormSettings formSettings = new FormSettings())
             {
                 DialogResult result = formSettings.ShowDialog(this);
@@ -1142,6 +1187,10 @@ namespace VACamera
                 if (result == DialogResult.OK)
                 {
                     InitDevices();
+                }
+                else
+                {
+                    ResumePreview();
                 }
             }
         }

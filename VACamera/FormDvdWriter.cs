@@ -964,17 +964,18 @@ namespace VACamera
             if (!(_isBurning1 || _isBurning2))
             {
                 // only clean file if it is already burned to disk
-                if (_isRecordSuccess1 || _isRecordSuccess2)
-                {
-                    try
-                    {
-                        File.Delete(_filePath);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.WriteLine(ex.ToString());
-                    }
-                }
+                //HuongND: Keep file in case fail one DVD disk, must complete 2 DVD discs
+                //if (_isRecordSuccess1 || _isRecordSuccess2)
+                //{
+                //    try
+                //    {
+                //        File.Delete(_filePath);
+                //    }
+                //    catch (Exception ex)
+                //    {
+                //        Log.WriteLine(ex.ToString());
+                //    }
+                //}
 
                 // show new session
                 if (MessageBox.Show("Bạn có muốn tạo phiên làm việc mới không?", "Tiếp tục", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)

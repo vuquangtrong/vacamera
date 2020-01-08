@@ -54,6 +54,7 @@ namespace VACamera
 
         string outputFolder = "C:\\records";
         string outputFile = "";
+        string replayFile = "";
         string videoExtension = ".mp4";
 
         SessionInfo sessionInfo = new SessionInfo();
@@ -958,6 +959,7 @@ namespace VACamera
                 }
 
                 outputFile = outputFolder + "\\" + sessionInfo.DateTime + "_" + recordPart.ToString() + videoExtension;
+                replayFile = outputFile;
                 videoFileWriter = new VideoFileWriter();
 
                 if (audioDevice != null)
@@ -1020,24 +1022,33 @@ namespace VACamera
 
         private void StopRecording(bool temporary)
         {
+            //TODO: Check sometime this hold file, did not finish file, so merge file not correct
             PauseRecording();
 
             if (temporary)
                 Thread.Sleep(1000);
 
             Log.WriteLine(">>> MERGE VIDEO FILE");
-            outputFile = outputFolder + "\\" + sessionInfo.DateTime + "_" + recordPart.ToString() + videoExtension;
+            //outputFile = outputFolder + "\\" + sessionInfo.DateTime + "_" + recordPart.ToString() + videoExtension;
 
             // join files
             if (File.Exists("ffmpeg.exe") && recordPart > 1)
             {
-                String command = "ffmpeg.exe -f concat -safe 0 -i records.txt -c copy \"" + outputFile + "\"";
-                execv(command);
+                //String command = "ffmpeg.exe -f concat -safe 0 -i records.txt -c copy \"" + outputFile + "\"";
+                //execv(command);
+                replayFile = outputFolder + "\\" + sessionInfo.DateTime + "_final" + videoExtension;
+                if (File.Exists(replayFile))
+                {
+                    File.Delete(replayFile);
+                }
+                String command_replay = "ffmpeg.exe -f concat -safe 0 -i records.txt -c copy \"" + replayFile + "\"";
+                execv(command_replay);
 
-                add_file_to_record_list(outputFile, true);
-                recordPart++;
 
-                Thread.Sleep(2000);
+                //add_file_to_record_list(outputFile, true);
+                //recordPart++;
+
+                Thread.Sleep(1000);
 
                 // remove segmented files
                 //var dir = new DirectoryInfo(outputFolder);
@@ -1270,11 +1281,12 @@ namespace VACamera
 
         private void btnReplay_Click(object sender, EventArgs e)
         {
+            Console.WriteLine(replayFile);
             if (videoRecordState == VideoRecordState.IDLE)
             {
-                if (File.Exists(outputFile))
+                if (File.Exists(replayFile))
                 {
-                    Process.Start(outputFile);
+                    Process.Start(replayFile);
                 }
             }
         }
@@ -1282,8 +1294,9 @@ namespace VACamera
         private void btnWriteDisk_Click(object sender, EventArgs e)
         {
             Log.WriteLine(sessionInfo.ToString());
-            Log.WriteLine("outputFile = " + outputFile);
-            using (FormDvdWriter formDvdWriter = new FormDvdWriter(sessionInfo.DateTime, outputFile))
+            //Log.WriteLine("outputFile = " + outputFile);
+            Log.WriteLine("outputFile = " + replayFile);
+            using (FormDvdWriter formDvdWriter = new FormDvdWriter(sessionInfo.DateTime, replayFile))
             {
                 DialogResult result = formDvdWriter.ShowDialog();
                 if (result == DialogResult.Yes)
@@ -1292,8 +1305,9 @@ namespace VACamera
                 }
                 else if (result == DialogResult.No)
                 {
-                    MessageBox.Show("Kết thúc phiên làm việc và dừng chương trình!");
-                    Close();
+                    // Can return main form and click to write DVD again if one DVD fail
+                    //MessageBox.Show("Kết thúc phiên làm việc và dừng chương trình!");
+                    //Close();
                 }
                 else if (result == DialogResult.Cancel)
                 {

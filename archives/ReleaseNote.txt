@@ -79,3 +79,13 @@
 1225_1743
 	~1221_0015
 	Tweak for slow PC: not logging, not sleep in render thread
+
+1227_1358
+	~1225_1743
+	Dynamic framesize to reduce render time
+
+011_1801
+	remove Accord.Video.FFMPEG
+	change to AnyCPU architecture
+	run FFMPEG to write video file from bitmap stream
+	use GPU to encode H264 (h264_qsv)

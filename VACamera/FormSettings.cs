@@ -30,6 +30,11 @@ namespace VACamera
                     int index = 0;
                     foreach (AudioDeviceInfo device in audioDevices)
                     {
+                        if(device.Guid.ToString().Equals("00000000-0000-0000-0000-000000000000"))
+                        {
+                            continue;
+                        }
+
                         listAudioSource.Items.Add(device.Description + "|" + device.Guid.ToString());
                         if (Settings.AudioInputPath.Equals(device.Description + "|" + device.Guid.ToString()))
                         {

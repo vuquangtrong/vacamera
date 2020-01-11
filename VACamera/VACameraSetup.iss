@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "VACamera"
-#define MyAppVersion "1.5"
+#define MyAppVersion "2.0"
 #define MyAppPublisher "My Company, Inc."
 #define MyAppURL "http://www.example.com/"
 #define MyAppExeName "VACamera.exe"
@@ -83,30 +83,20 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "bin\x86\Release\VACamera.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "bin\x86\Release\Accord.Audio.DirectSound.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "bin\x86\Release\Accord.Audio.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "bin\x86\Release\Accord.Audition.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "bin\x86\Release\Accord.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "bin\x86\Release\Accord.Math.Core.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "bin\x86\Release\Accord.Math.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "bin\x86\Release\Accord.Video.DirectShow.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "bin\x86\Release\Accord.Video.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "bin\x86\Release\Accord.Video.FFMPEG.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "bin\x86\Release\avcodec-53.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "bin\x86\Release\avdevice-53.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "bin\x86\Release\avformat-53.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "bin\x86\Release\avutil-51.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "bin\x86\Release\postproc-52.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "bin\x86\Release\SharpDX.DirectSound.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "bin\x86\Release\SharpDX.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "bin\x86\Release\swresample-0.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "bin\x86\Release\swscale-2.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "bin\x86\Release\VACamera.application"; DestDir: "{app}"; Flags: ignoreversion
-Source: "bin\x86\Release\VACamera.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "bin\x86\Release\VACamera.exe.manifest"; DestDir: "{app}"; Flags: ignoreversion
-Source: "bin\x86\Release\ffmpeg.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "bin\x86\Release\osk.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "bin\Release\Accord.Audio.DirectSound.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "bin\Release\Accord.Audio.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "bin\Release\Accord.Audition.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "bin\Release\Accord.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "bin\Release\Accord.Math.Core.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "bin\Release\Accord.Math.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "bin\Release\Accord.Video.DirectShow.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "bin\Release\Accord.Video.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "bin\Release\SharpDX.DirectSound.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "bin\Release\SharpDX.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "bin\Release\VACamera.application"; DestDir: "{app}"; Flags: ignoreversion
+Source: "bin\Release\VACamera.exe.manifest"; DestDir: "{app}"; Flags: ignoreversion
+Source: "bin\Release\VACamera.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "bin\Release\ffmpeg.exe"; DestDir: "{app}"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]

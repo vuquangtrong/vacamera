@@ -20,7 +20,6 @@ Direct  2.6 ms      2.7 ms          2.9 ms
 using Accord.Audio;
 using Accord.DirectSound;
 using Accord.Video.DirectShow;
-using Accord.Video.FFMPEG;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -30,6 +29,7 @@ using System.Drawing.Imaging;
 using System.Drawing.Text;
 using System.IO;
 using System.Media;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -46,7 +46,8 @@ namespace VACamera
         }
 
         VideoRecordState videoRecordState = VideoRecordState.IDLE;
-        VideoFileWriter videoFileWriter = null;
+		Process ffmpeg;
+        Stream ffmpegInputStream;
         Thread videoRenderThread = null;
         int recordTime = 0;
         int recordPart = 0;
@@ -61,7 +62,7 @@ namespace VACamera
         Settings settings = new Settings();
 
         List<AudioDeviceInfo> audioDevices = null;
-        IAudioSource audioDevice = null;
+        string audioDeviceName = "";
 
         FilterInfoCollection videoDevices;
         VideoCaptureDevice videoDevice1 = null;
@@ -85,6 +86,22 @@ namespace VACamera
         Rectangle textLine3 = new Rectangle(10, Settings.VideoHeight - 10 - 40, Settings.VideoWidth - 20, 40);
 
         SoundPlayer beepPlayer = new SoundPlayer(Resources.beep);
+
+        internal const int CTRL_C_EVENT = 0;
+        [DllImport("kernel32.dll")]
+        internal static extern bool GenerateConsoleCtrlEvent(uint dwCtrlEvent, uint dwProcessGroupId);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        internal static extern bool AttachConsole(uint dwProcessId);
+
+        [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
+        internal static extern bool FreeConsole();
+
+        [DllImport("kernel32.dll")]
+        static extern bool SetConsoleCtrlHandler(ConsoleCtrlDelegate HandlerRoutine, bool Add);
+
+        // Delegate type to be used as the Handler Routine for SCCH
+        delegate bool ConsoleCtrlDelegate(uint CtrlType);
 
         public FormMain()
         {
@@ -254,6 +271,12 @@ namespace VACamera
                     // find last used device
                     foreach (AudioDeviceInfo device in audioDevices)
                     {
+                        // ffmpeg do not handle virtual primary audio device 
+                        if (device.Guid.ToString().Equals("00000000-0000-0000-0000-000000000000"))
+                        {
+                            continue;
+                        }
+
                         if (settings.AudioInputPath.Equals(device.Description + "|" + device.Guid.ToString()))
                         {
                             audioDeviceInfo = device;
@@ -266,26 +289,7 @@ namespace VACamera
                         audioDeviceInfo = audioDevices[0];
                     }
 
-                    // setup audio device
-                    List<AudioCaptureDevice> listAudioDevices = new List<AudioCaptureDevice>();
-                    AudioCaptureDevice audioCaptureDevice = new AudioCaptureDevice(audioDeviceInfo)
-                    {
-                        Format = SampleFormat.Format16Bit,
-                        SampleRate = settings.AudioSampleRate, // 44100 Hz
-                        DesiredFrameSize = settings.AudioFrameSize // 8 Kb
-                    };
-                    Log.WriteLine("audioCaptureDevice.Format = " + audioCaptureDevice.Format.ToString());
-                    Log.WriteLine("audioCaptureDevice.SampleRate = " + audioCaptureDevice.SampleRate);
-                    Log.WriteLine("audioCaptureDevice.DesiredFrameSize = " + audioCaptureDevice.DesiredFrameSize);
-                    audioCaptureDevice.Start();
-                    listAudioDevices.Add(audioCaptureDevice);
-
-                    // setup audio mixer as main audio output device
-                    audioDevice = new AudioSourceMixer(listAudioDevices);
-                    audioDevice.NewFrame += AudioDevice_NewFrame;
-                    audioDevice.Channels = (settings.AudioChannel == Settings.AudioMode.Mono ? 1 : 2);
-                    audioDevice.Start();
-
+                    audioDeviceName = audioDeviceInfo.Description;
                     Log.WriteLine(">>> START audioDevice: " + audioDeviceInfo.Description + "|" + audioDeviceInfo.Guid.ToString());
                 }
                 else
@@ -326,6 +330,7 @@ namespace VACamera
                         device1_MonikerString = videoDevices[0].MonikerString;
                     }
                     videoDevice1 = new VideoCaptureDevice(device1_MonikerString);
+                    Log.WriteLine("videoDevice1: " + device1_MonikerString);
                     for (int i = 0; i < videoDevice1.VideoCapabilities.Length; i++)
                     {
                         Log.WriteLine("[" + i + "]" +
@@ -364,6 +369,7 @@ namespace VACamera
                     if (settings.VideoMixingMode != Settings.VideoMode.Single)
                     {
                         videoDevice2 = new VideoCaptureDevice(device2_MonikerString);
+                        Log.WriteLine("videoDevice2: " + device2_MonikerString);
                         for (int i = 0; i < videoDevice2.VideoCapabilities.Length; i++)
                         {
                             Log.WriteLine("[" + i + "]" +
@@ -416,10 +422,6 @@ namespace VACamera
 
         private void PausePreview()
         {
-            if (audioDevice != null)
-            {
-                audioDevice.NewFrame -= AudioDevice_NewFrame;
-            }
             if (videoDevice1 != null)
             {
                 videoDevice1.NewFrame -= VideoDevice1_NewFrame;
@@ -439,10 +441,6 @@ namespace VACamera
             }
             else
             {
-                if (audioDevice != null)
-                {
-                    audioDevice.NewFrame += AudioDevice_NewFrame;
-                }
                 if (videoDevice1 != null)
                 {
                     videoDevice1.NewFrame += VideoDevice1_NewFrame;
@@ -461,34 +459,11 @@ namespace VACamera
 
             try
             {
-                if (audioDevice != null)
-                {
-                    Log.WriteLine(">>> STOP audioDevice: start");
-                    audioDevice.NewFrame -= AudioDevice_NewFrame;
-
-                    audioDevice.SignalToStop();
-                    //audioDevice.WaitForStop();
-                    Thread.Sleep(1000);
-
-                    audioDevice.Dispose();
-                    audioDevice = null;
-                    Log.WriteLine(">>> STOP audioDevice: done");
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.WriteLine(ex.ToString());
-                audioDevice = null;
-            }
-
-            try
-            {
                 if (videoDevice1 != null)
                 {
                     Log.WriteLine(">>> STOP videoDevice1: start");
                     videoDevice1.NewFrame -= VideoDevice1_NewFrame;
                     videoDevice1.SignalToStop();
-                    //videoDevice1.WaitForStop();
                     Thread.Sleep(1000);
 
                     videoDevice1 = null;
@@ -508,7 +483,6 @@ namespace VACamera
                     Log.WriteLine(">>> STOP videoDevice2: start");
                     videoDevice2.NewFrame -= VideoDevice2_NewFrame;
                     videoDevice2.SignalToStop();
-                    //videoDevice2.WaitForStop();
                     Thread.Sleep(1000);
 
                     videoDevice2 = null;
@@ -524,7 +498,7 @@ namespace VACamera
 
         private bool isDevicesStopped()
         {
-            return ((audioDevice != null) || (videoDevice1 != null) || (videoDevice2 != null));
+            return ((videoDevice1 != null) || (videoDevice2 != null));
         }
 
         delegate void UpdateLiveImageInvokerCallBack(PictureBox pictureBox, Bitmap bitmap);
@@ -562,34 +536,6 @@ namespace VACamera
             catch (Exception ex)
             {
                 Log.WriteLine(ex.ToString());
-            }
-        }
-
-        private void AudioDevice_NewFrame(object sender, Accord.Audio.NewFrameEventArgs eventArgs)
-        {
-            // MICROPHONE DOES REPORT SIGNAL DURATION
-            //if (true) // debug
-            //{
-            //    Log.WriteLine("Duration = " + eventArgs.Signal.Duration.Milliseconds);
-            //    //Log.WriteLine("Length = " + eventArgs.Signal.Length);
-            //    //Log.WriteLine("NumberOfChannels = " + eventArgs.Signal.NumberOfChannels);
-            //    //Log.WriteLine("SampleRate = " + eventArgs.Signal.SampleRate);
-            //    //Log.WriteLine("SampleFormat = " + eventArgs.Signal.SampleFormat.ToString());
-            //}
-
-            if (videoRecordState == VideoRecordState.RECORDING)
-            {
-                lock (syncRender)
-                {
-                    try
-                    {
-                        videoFileWriter.WriteAudioFrame(eventArgs.Signal.RawData);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.WriteLine(ex.ToString());
-                    }
-                }
             }
         }
 
@@ -872,16 +818,11 @@ namespace VACamera
                 {
                     try
                     {
-                        if (lastVideoFrameTime == DateTime.MinValue)
+                        // still need to optimize, because it takes time to write to memory stream
+                        using (var ms = new MemoryStream())
                         {
-                            videoFileWriter.WriteVideoFrame(_videoFrame);
-                            lastVideoFrameTime = DateTime.Now;
-                        }
-                        else
-                        {
-                            DateTime now = DateTime.Now;
-                            TimeSpan timeSpan = now - lastVideoFrameTime;
-                            videoFileWriter.WriteVideoFrame(_videoFrame, timeSpan);
+                            _videoFrame.Save(ms, System.Drawing.Imaging.ImageFormat.Bmp);
+                            ms.WriteTo(ffmpegInputStream);
                         }
                     }
                     catch (Exception ex)
@@ -911,25 +852,22 @@ namespace VACamera
             }
         }
 
-        private void execv(string command)
+        private void RunCommand(string command)
         {
             Log.WriteLine(command);
 
             Process process = new Process();
-            ProcessStartInfo startInfo = new ProcessStartInfo();
-
-            startInfo.WindowStyle = ProcessWindowStyle.Hidden;
-            startInfo.FileName = "cmd.exe";
-            startInfo.Arguments = "/C " + command;
-            process.StartInfo = startInfo;
+            process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+            process.StartInfo.FileName = "cmd.exe";
+            process.StartInfo.Arguments = "/C " + command;
             process.Start();
             process.WaitForExit();
         }
 
-        private void add_file_to_record_list(string file, bool reset)
+        private void AddFileToRecordList(string file, bool reset)
         {
             string command = "echo file '" + file + "' " + (reset ? ">" : ">>") + " records.txt";
-            execv(command);
+            RunCommand(command);
         }
 
         private void PrepareRecord()
@@ -949,39 +887,36 @@ namespace VACamera
         {
             if (videoRecordState == VideoRecordState.IDLE)
             {
-                VideoCodec videoCodec = VideoCodec.H264; /* MP4 container in H264 encode, H264 supports variant framerate */
                 videoExtension = ".mp4";
 
                 if (settings.VideoOutputFormat == Settings.VideoFormat.MPEG2)
                 {
-                    videoCodec = VideoCodec.MPEG2;
                     videoExtension = ".mpg";
                 }
 
                 outputFile = outputFolder + "\\" + sessionInfo.DateTime + "_" + recordPart.ToString() + videoExtension;
                 replayFile = outputFile;
-                videoFileWriter = new VideoFileWriter();
 
-                if (audioDevice != null)
-                {
-                    Log.WriteLine("RECORD HAS AUDIO");
-
-                    videoFileWriter.Open(
-                        outputFile,
-                        Settings.VideoWidth, Settings.VideoHeight, settings.VideoFrameRate, videoCodec, settings.VideoBitRate,
-                        AudioCodec.MP3, settings.AudioBitRate, audioDevice.SampleRate, audioDevice.Channels
-                    );
-                }
-                else
-                {
-                    videoFileWriter.Open(
-                        outputFile,
-                        Settings.VideoWidth, Settings.VideoHeight, settings.VideoFrameRate, videoCodec, settings.VideoBitRate
-                    );
-                }
+                // start new process
+                ffmpeg = new Process();
+                ffmpeg.StartInfo.FileName = @"ffmpeg.exe";
+                ffmpeg.StartInfo.Arguments = String.Format(
+                    "-f image2pipe -i pipe:.bmp " +
+                    "-f dshow -i audio=\"{0}\" " +
+                    "-r {1} -b:v {2}k -c:v h264_qsv -preset fast -y {3} ", 
+                    audioDeviceName,
+                    settings.VideoFrameRate,
+                    settings.VideoBitRate / 1000,
+                    outputFile);
+                ffmpeg.StartInfo.UseShellExecute = false;
+                ffmpeg.StartInfo.CreateNoWindow = true;
+                ffmpeg.StartInfo.RedirectStandardInput = true;
+                ffmpeg.StartInfo.RedirectStandardOutput = true;
+                ffmpeg.Start();
+                ffmpegInputStream = ffmpeg.StandardInput.BaseStream;
 
                 // track new file
-                add_file_to_record_list(outputFile, false);
+                AddFileToRecordList(outputFile, false);
 
                 lastVideoFrameTime = DateTime.MinValue;
                 timerRecord.Start();
@@ -1000,12 +935,36 @@ namespace VACamera
                 {
                     try
                     {
-                        if (videoFileWriter != null)
-                        {
-                            videoFileWriter.Flush();
-                            videoFileWriter.Close();
-                            videoFileWriter.Dispose();
-                            videoFileWriter = null;
+                        if (ffmpegInputStream != null && ffmpeg != null)
+	                    {
+                            ffmpegInputStream.Flush();
+                            ffmpegInputStream.Close();
+                            Log.WriteLine("Flush FFMPEG");
+
+                            Log.WriteLine("sending Ctrl+C to " + ffmpeg.SessionId);
+
+                            if (AttachConsole((uint)ffmpeg.Id))
+                            {
+                                SetConsoleCtrlHandler(null, true);
+                                try
+                                {
+                                    if (!GenerateConsoleCtrlEvent(CTRL_C_EVENT, 0))
+                                    {
+                                        Log.WriteLine("Cannot break ffmpeg process");
+                                    }
+                                    else
+                                    {
+                                        ffmpeg.WaitForExit();
+                                    }
+                                }
+                                finally
+                                {
+                                    FreeConsole();
+                                    SetConsoleCtrlHandler(null, false);
+                                }
+                            }
+
+                            Log.WriteLine("Exit FFMPEG");
                         }
                     }
                     catch (Exception ex)
@@ -1042,7 +1001,7 @@ namespace VACamera
                     File.Delete(replayFile);
                 }
                 String command_replay = "ffmpeg.exe -f concat -safe 0 -i records.txt -c copy \"" + replayFile + "\"";
-                execv(command_replay);
+                RunCommand(command_replay);
 
 
                 //add_file_to_record_list(outputFile, true);

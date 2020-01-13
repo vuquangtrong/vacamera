@@ -1,9 +1,10 @@
 ﻿#define USE_DIRECT_MEMORY_ACCESS
-#define USE_SLOW_PC
+#define USE_PINNED_MEMORY_BITMAP
+//#define USE_SLOW_PC
 
 /*
- 
-Execution Time to render 1 video frame
+
+Time to render 1 video frame
 
 FrameSize: 1280x720
 Mode    Single      Side2Side       Overlay
@@ -14,10 +15,20 @@ FrameSize: Dynamic
 Mode    Single      Side2Side       Overlay
 GDI+    3.7 ms      7   ms          5.4 ms
 Direct  2.6 ms      2.7 ms          2.9 ms
+Pinned  2.5 ms      1.7 ms          2.5 ms
+
+---
+
+Time to write 1 video frame
+
+Write H264
+Mode        Single      Side2Side       Overlay
+CPU         7.5 ms      7.7 ms          7.8 ms
+GPU         6.6 ms      6.6 ms          6.6 ms
+GPU+Pinned  2.8 ms      2.0 ms          3.0 ms
 
 */
 
-using Accord.Audio;
 using Accord.DirectSound;
 using Accord.Video.DirectShow;
 using System;
@@ -46,7 +57,7 @@ namespace VACamera
         }
 
         VideoRecordState videoRecordState = VideoRecordState.IDLE;
-		Process ffmpeg;
+        Process ffmpeg;
         Stream ffmpegInputStream;
         Thread videoRenderThread = null;
         int recordTime = 0;
@@ -75,6 +86,11 @@ namespace VACamera
         Bitmap frame2 = null;
         static readonly Object syncFrame2 = new Object();
 
+#if USE_PINNED_MEMORY_BITMAP
+        byte[] _videoFramePixels;
+        IntPtr _videoFrameFirstPixelAddr;
+        int _videoFrameStride;
+#endif
         Bitmap _videoFrame = null;
         Graphics _graphics = null;
         DateTime lastVideoFrameTime = DateTime.MinValue;
@@ -129,8 +145,21 @@ namespace VACamera
             btnWriteDisk.Enabled = false;
 
             // init bitmap buffer
-            _videoFrame = new Bitmap(Settings.VideoWidth, Settings.VideoHeight, PixelFormat.Format24bppRgb);
+#if USE_PINNED_MEMORY_BITMAP
+            int pixelFormatSize = Image.GetPixelFormatSize(PixelFormat.Format24bppRgb) / 8;
+            _videoFrameStride = Settings.VideoWidth * pixelFormatSize;
+            _videoFramePixels = new byte[_videoFrameStride * Settings.VideoHeight];
 
+            // pin memory
+            GCHandle.Alloc(_videoFramePixels, GCHandleType.Pinned);
+            _videoFrameFirstPixelAddr = Marshal.UnsafeAddrOfPinnedArrayElement(_videoFramePixels, 0);
+            _videoFrame = new Bitmap(Settings.VideoWidth, Settings.VideoHeight, _videoFrameStride, PixelFormat.Format24bppRgb, _videoFrameFirstPixelAddr);
+
+            // binding preview
+            pictureFrame.Image = _videoFrame;
+#else
+            _videoFrame = new Bitmap(Settings.VideoWidth, Settings.VideoHeight, PixelFormat.Format24bppRgb);
+#endif
             // init grapics
             _graphics = Graphics.FromImage(_videoFrame);
 #if USE_DIRECT_MEMORY_ACCESS
@@ -501,6 +530,7 @@ namespace VACamera
             return ((videoDevice1 != null) || (videoDevice2 != null));
         }
 
+#if !USE_PINNED_MEMORY_BITMAP
         delegate void UpdateLiveImageInvokerCallBack(PictureBox pictureBox, Bitmap bitmap);
 
         private void UpdateLiveImageInvoker(PictureBox pictureBox, Bitmap bitmap)
@@ -538,6 +568,7 @@ namespace VACamera
                 Log.WriteLine(ex.ToString());
             }
         }
+#endif
 
         private void VideoDevice1_NewFrame(object sender, Accord.Video.NewFrameEventArgs eventArgs)
         {
@@ -604,15 +635,19 @@ namespace VACamera
             // use unsafe and parallel
             unsafe
             {
+#if USE_PINNED_MEMORY_BITMAP
+                byte* ptrFirstPixel_videoFrame = (byte*)_videoFrameFirstPixelAddr;
+#else
                 // lock video frame into memory
                 BitmapData bitmapData_videoFrame = _videoFrame.LockBits(
                     new Rectangle(0, 0, _videoFrame.Width, _videoFrame.Height),
                     ImageLockMode.WriteOnly,
                     _videoFrame.PixelFormat);
-
                 byte* ptrFirstPixel_videoFrame = (byte*)bitmapData_videoFrame.Scan0;
+#endif
+
 #else
-            _graphics.CompositingMode = CompositingMode.SourceCopy;
+                _graphics.CompositingMode = CompositingMode.SourceCopy;
 #endif
                 // render frame1 which comes from videoDevive1's thread, we need to lock it
                 Bitmap _frame1 = null;
@@ -649,11 +684,19 @@ namespace VACamera
                             && _frame1.Height == 720)
                         {
                             // copy all pixels of frame 1 to video frame
-                            Parallel.For(0, bitmapData_videoFrame.Height, y =>
+                            Parallel.For(0, Settings.VideoHeight, y =>
                             {
+#if USE_PINNED_MEMORY_BITMAP
+                                byte* currentLine_videoFrame = ptrFirstPixel_videoFrame + (y * _videoFrameStride);
+#else
                                 byte* currentLine_videoFrame = ptrFirstPixel_videoFrame + (y * bitmapData_videoFrame.Stride);
+#endif
                                 byte* currentLine_frame1 = ptrFirstPixel_frame1 + (y * bitmapData_frame1.Stride);
+#if USE_PINNED_MEMORY_BITMAP
+                                for (int x = 0; x < _videoFrameStride; x++)
+#else
                                 for (int x = 0; x < bitmapData_videoFrame.Stride; x++)
+#endif
                                 {
                                     currentLine_videoFrame[x] = currentLine_frame1[x];
                                 };
@@ -664,13 +707,17 @@ namespace VACamera
                             && _frame1.Height == 480)
                         {
                             // copy a half of pixels of frame 1 to video frame
-                            Parallel.For(0, bitmapData_videoFrame.Height, y =>
+                            Parallel.For(0, Settings.VideoHeight, y =>
                             {
+#if USE_PINNED_MEMORY_BITMAP
+                                byte* currentLine_videoFrame = ptrFirstPixel_videoFrame + (y * _videoFrameStride);
+#else
                                 byte* currentLine_videoFrame = ptrFirstPixel_videoFrame + (y * bitmapData_videoFrame.Stride);
+#endif
                                 byte* currentLine_frame1 = ptrFirstPixel_frame1 + ((y * 2 / 3) * bitmapData_frame1.Stride);
                                 int u = 0;
                                 int v = 0;
-                                for (int x = 0; x < bitmapData_videoFrame.Width / 2; x++)
+                                for (int x = 0; x < Settings.VideoWidth / 2; x++)
                                 {
                                     currentLine_videoFrame[u++] = currentLine_frame1[v++];
                                     currentLine_videoFrame[u++] = currentLine_frame1[v++];
@@ -729,13 +776,17 @@ namespace VACamera
                                 && _frame2.Height == 480)
                             {
                                 // copy a half of pixels of frame 2 to video frame
-                                Parallel.For(0, bitmapData_videoFrame.Height, y =>
+                                Parallel.For(0, Settings.VideoHeight, y =>
                                 {
+#if USE_PINNED_MEMORY_BITMAP
+                                    byte* currentLine_videoFrame = ptrFirstPixel_videoFrame + (y * _videoFrameStride);
+#else
                                     byte* currentLine_videoFrame = ptrFirstPixel_videoFrame + (y * bitmapData_videoFrame.Stride);
+#endif
                                     byte* currentLine_frame2 = ptrFirstPixel_frame2 + ((y * 2 / 3) * bitmapData_frame2.Stride);
-                                    int u = (bitmapData_videoFrame.Width / 2) * 3;
+                                    int u = (Settings.VideoWidth / 2) * 3;
                                     int v = 0;
-                                    for (int x = 0; x < bitmapData_videoFrame.Width / 2; x++)
+                                    for (int x = 0; x < Settings.VideoWidth / 2; x++)
                                     {
                                         currentLine_videoFrame[u++] = currentLine_frame2[v++];
                                         currentLine_videoFrame[u++] = currentLine_frame2[v++];
@@ -750,7 +801,11 @@ namespace VACamera
                                 // start copy at overlay position only
                                 Parallel.For(0, 240, y =>
                                 {
+#if USE_PINNED_MEMORY_BITMAP
+                                    byte* currentLine_videoFrame = ptrFirstPixel_videoFrame + ((470 + y) * _videoFrameStride);
+#else
                                     byte* currentLine_videoFrame = ptrFirstPixel_videoFrame + ((470 + y) * bitmapData_videoFrame.Stride);
+#endif
                                     byte* currentLine_frame2 = ptrFirstPixel_frame2 + (y * bitmapData_frame2.Stride);
                                     int u = 950 * 3;
                                     int v = 0;
@@ -778,7 +833,9 @@ namespace VACamera
                     }
                 }
 #if USE_DIRECT_MEMORY_ACCESS
+#if !USE_PINNED_MEMORY_BITMAP
                 _videoFrame.UnlockBits(bitmapData_videoFrame);
+#endif
             }
 #endif
             // add text
@@ -803,12 +860,6 @@ namespace VACamera
                 Log.WriteLine(ex.ToString());
             }
 
-            // show preview in UI thread, need to clone it, and then MUST invoke the UI thread
-            if (pictureFrame != null)
-            {
-                UpdateLiveImageInvoker(pictureFrame, (Bitmap)_videoFrame.Clone());
-            }
-
             // write frame if needed
             if (videoRecordState == VideoRecordState.RECORDING)
             {
@@ -819,11 +870,15 @@ namespace VACamera
                     try
                     {
                         // still need to optimize, because it takes time to write to memory stream
+#if USE_PINNED_MEMORY_BITMAP
+                        ffmpegInputStream.Write(_videoFramePixels, 0, 2764800 /* 1280x720x3 */);
+#else
                         using (var ms = new MemoryStream())
                         {
                             _videoFrame.Save(ms, System.Drawing.Imaging.ImageFormat.Bmp);
                             ms.WriteTo(ffmpegInputStream);
                         }
+#endif
                     }
                     catch (Exception ex)
                     {
@@ -831,6 +886,16 @@ namespace VACamera
                     }
                 }
                 //});
+            }
+
+            // show preview in UI thread, need to clone it, and then MUST invoke the UI thread
+            if (pictureFrame != null)
+            {
+#if USE_PINNED_MEMORY_BITMAP
+                pictureFrame.Invalidate();
+#else
+                UpdateLiveImageInvoker(pictureFrame, (Bitmap)_videoFrame.Clone());
+#endif
             }
 
             stopWatch.Stop();
@@ -901,9 +966,13 @@ namespace VACamera
                 ffmpeg = new Process();
                 ffmpeg.StartInfo.FileName = @"ffmpeg.exe";
                 ffmpeg.StartInfo.Arguments = String.Format(
+#if USE_PINNED_MEMORY_BITMAP
+                    "-f rawvideo -pix_fmt bgr24 -video_size 1280x720 -thread_queue_size 64 -i - " +
+#else
                     "-f image2pipe -i pipe:.bmp " +
+#endif
                     "-f dshow -i audio=\"{0}\" " +
-                    "-r {1} -b:v {2}k -c:v h264_qsv -preset fast -y {3} ", 
+                    "-r {1} -b:v {2}k -c:v h264_qsv -preset veryfast -y {3} ",
                     audioDeviceName,
                     settings.VideoFrameRate,
                     settings.VideoBitRate / 1000,
@@ -912,6 +981,8 @@ namespace VACamera
                 ffmpeg.StartInfo.CreateNoWindow = true;
                 ffmpeg.StartInfo.RedirectStandardInput = true;
                 ffmpeg.StartInfo.RedirectStandardOutput = true;
+
+                Log.WriteLine(ffmpeg.StartInfo.Arguments);
                 ffmpeg.Start();
                 ffmpegInputStream = ffmpeg.StandardInput.BaseStream;
 
@@ -936,7 +1007,7 @@ namespace VACamera
                     try
                     {
                         if (ffmpegInputStream != null && ffmpeg != null)
-	                    {
+                        {
                             ffmpegInputStream.Flush();
                             ffmpegInputStream.Close();
                             Log.WriteLine("Flush FFMPEG");
@@ -1088,16 +1159,8 @@ namespace VACamera
                 }
 
                 Close();
-                //string command = "shutdown -s -t 0";
-                //Process process = new Process();
-                //ProcessStartInfo startInfo = new ProcessStartInfo();
 
-                //startInfo.WindowStyle = ProcessWindowStyle.Hidden;
-                //startInfo.FileName = "cmd.exe";
-                //startInfo.Arguments = "/C " + command;
-                //process.StartInfo = startInfo;
-                //process.Start();
-                //process.WaitForExit();
+                //RunCommand("shutdown -s -t 0");
             }
         }
 
@@ -1208,10 +1271,6 @@ namespace VACamera
                 btnStop.Enabled = true;
                 btnReplay.Enabled = true;
                 btnWriteDisk.Enabled = false;
-
-
-
-
             }
         }
 

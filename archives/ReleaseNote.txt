@@ -84,8 +84,11 @@
 	~1225_1743
 	Dynamic framesize to reduce render time
 
-011_1801
+0111_1801
 	remove Accord.Video.FFMPEG
 	change to AnyCPU architecture
 	run FFMPEG to write video file from bitmap stream
 	use GPU to encode H264 (h264_qsv)
+
+0113_1341
+	use pinned memory to stream rawvideo to ffmpeg, reduce rendering+writing time to 2ms/frame

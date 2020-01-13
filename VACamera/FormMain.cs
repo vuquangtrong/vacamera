@@ -1,5 +1,7 @@
 ﻿#define USE_DIRECT_MEMORY_ACCESS
+#if USE_DIRECT_MEMORY_ACCESS
 #define USE_PINNED_MEMORY_BITMAP
+#endif
 //#define USE_SLOW_PC
 
 /*
@@ -132,6 +134,15 @@ namespace VACamera
                 Log.WriteLine(ex.ToString());
             }
 
+#if USE_DIRECT_MEMORY_ACCESS && USE_PINNED_MEMORY_BITMAP
+            Log.WriteLine("Running with USE_DIRECT_MEMORY_ACCESS & USE_PINNED_MEMORY_BITMAP");
+#elif USE_PINNED_MEMORY_BITMAP
+            Log.WriteLine("Running with USE_PINNED_MEMORY_BITMAP");
+#elif USE_DIRECT_MEMORY_ACCESS
+            Log.WriteLine("Running with USE_DIRECT_MEMORY_ACCESS");
+#else
+            Log.WriteLine("Running with GDI+");
+#endif
             Hide();
         }
 

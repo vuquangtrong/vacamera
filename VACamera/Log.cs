@@ -1,4 +1,4 @@
-﻿#define USE_SLOW_PC
+﻿//#define USE_SLOW_PC
 
 using System;
 using System.Diagnostics;

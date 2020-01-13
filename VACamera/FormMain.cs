@@ -1,7 +1,9 @@
 ﻿#define USE_DIRECT_MEMORY_ACCESS
+
 #if USE_DIRECT_MEMORY_ACCESS
 #define USE_PINNED_MEMORY_BITMAP
 #endif
+
 //#define USE_SLOW_PC
 
 /*
@@ -13,7 +15,7 @@ Mode    Single      Side2Side       Overlay
 GDI+    3.7 ms      7   ms          5.4 ms
 Direct  2.6 ms      3.9 ms          3.6 ms
 
-FrameSize: Dynamic
+FrameSize: Dynamic, auto get framesize 1280x720, 640x480, 320x240
 Mode    Single      Side2Side       Overlay
 GDI+    3.7 ms      7   ms          5.4 ms
 Direct  2.6 ms      2.7 ms          2.9 ms
@@ -311,6 +313,8 @@ namespace VACamera
                     // find last used device
                     foreach (AudioDeviceInfo device in audioDevices)
                     {
+                        Log.WriteLine("Checking: " + device.Description + "|" + device.Guid.ToString());
+
                         // ffmpeg do not handle virtual primary audio device 
                         if (device.Guid.ToString().Equals("00000000-0000-0000-0000-000000000000"))
                         {
@@ -323,14 +327,19 @@ namespace VACamera
                         }
                     }
 
-                    // if nothing matched, use default device
+                    // if nothing matched, show dialog
                     if (audioDeviceInfo == null)
                     {
-                        audioDeviceInfo = audioDevices[0];
+                        MessageBox.Show("Không tìm thấy thiết bị thu âm" +
+                            (settings.AudioInputPath.Equals("") ? "" : ": " + settings.AudioInputPath.Split(new char[] { '|' })[0]) +
+                            "." + Environment.NewLine + "Hãy chọn thiết bị khác ở mục Cài Đặt.",
+                            "Microphone");
                     }
-
-                    audioDeviceName = audioDeviceInfo.Description;
-                    Log.WriteLine(">>> START audioDevice: " + audioDeviceInfo.Description + "|" + audioDeviceInfo.Guid.ToString());
+                    else
+                    {
+                        audioDeviceName = audioDeviceInfo.Description;
+                        Log.WriteLine(">>> START audioDevice: " + audioDeviceInfo.Description + "|" + audioDeviceInfo.Guid.ToString());
+                    }
                 }
                 else
                 {
@@ -343,7 +352,9 @@ namespace VACamera
             }
 
             // start video devices
+            string device1_Name = "";
             string device1_MonikerString = "";
+            string device2_Name = "";
             string device2_MonikerString = "";
             try
             {
@@ -353,22 +364,32 @@ namespace VACamera
                     // find last used devices
                     foreach (FilterInfo device in videoDevices)
                     {
-                        if (settings.Camera1_InputPath.Equals(device.MonikerString))
+                        if (settings.Camera1_InputPath.Equals(device.Name + "|" + device.MonikerString))
                         {
+                            device1_Name = device.Name;
                             device1_MonikerString = device.MonikerString;
                         }
 
-                        if (settings.Camera2_InputPath.Equals(device.MonikerString))
+                        if (settings.Camera2_InputPath.Equals(device.Name + "|" + device.MonikerString))
                         {
+                            device2_Name = device.Name;
                             device2_MonikerString = device.MonikerString;
                         }
                     }
 
                     // not matched, use default device
-                    if (device1_MonikerString.Equals(""))
+                    if (device1_Name.Equals(""))
                     {
+                        MessageBox.Show("Không tìm thấy camera" +
+                            (settings.Camera1_InputPath.Equals("") ? "" : ": " + settings.Camera1_InputPath.Split(new char[] { '|' })[0]) +
+                            "." + Environment.NewLine +
+                            "Phần mêm đã tự động chọn: " + videoDevices[0].Name + "." + Environment.NewLine +
+                            "Để chọn thiết bị khác, vui lòng vào Cài Đặt.",
+                            "Camera 1");
+                        device1_Name = videoDevices[0].Name;
                         device1_MonikerString = videoDevices[0].MonikerString;
                     }
+
                     videoDevice1 = new VideoCaptureDevice(device1_MonikerString);
                     Log.WriteLine("videoDevice1: " + device1_MonikerString);
                     for (int i = 0; i < videoDevice1.VideoCapabilities.Length; i++)
@@ -392,22 +413,29 @@ namespace VACamera
                     videoDevice1.Start();
                     Log.WriteLine(">>> START videoDevice1: " + device1_MonikerString);
 
-                    // open second device if needed
-                    if (videoDevices.Count > 1)
-                    {
-                        if (device2_MonikerString.Equals(""))
-                        {
-                            device2_MonikerString = videoDevices[1].MonikerString;
-                        }
-                    }
-                    else
-                    {
-                        // fallback to Single mode
-                        settings.SetVideoMixingMode(Settings.VideoMode.Single);
-                    }
-
                     if (settings.VideoMixingMode != Settings.VideoMode.Single)
                     {
+                        // open second device if needed
+                        if (videoDevices.Count > 1)
+                        {
+                            if (device2_Name.Equals(""))
+                            {
+                                MessageBox.Show("Không tìm thấy camera" +
+                                (settings.Camera2_InputPath.Equals("") ? "" : ": " + settings.Camera2_InputPath.Split(new char[] { '|' })[0]) +
+                                "." + Environment.NewLine +
+                                "Phần mêm đã tự động chọn: " + videoDevices[1].Name + "." + Environment.NewLine +
+                                "Để chọn thiết bị khác, vui lòng vào Cài Đặt.",
+                                "Camera 2");
+                                device2_Name = videoDevices[1].Name;
+                                device2_MonikerString = videoDevices[1].MonikerString;
+                            }
+                        }
+                        else
+                        {
+                            // fallback to Single mode
+                            settings.SetVideoMixingMode(Settings.VideoMode.Single);
+                        }
+
                         videoDevice2 = new VideoCaptureDevice(device2_MonikerString);
                         Log.WriteLine("videoDevice2: " + device2_MonikerString);
                         for (int i = 0; i < videoDevice2.VideoCapabilities.Length; i++)
@@ -982,8 +1010,9 @@ namespace VACamera
 #else
                     "-f image2pipe -i pipe:.bmp " +
 #endif
-                    "-f dshow -i audio=\"{0}\" " +
+                    (audioDeviceName.Equals("") ? "" : "-f dshow -i audio=\"{0}\" ") +
                     "-r {1} -b:v {2}k -c:v h264_qsv -preset veryfast -y {3} ",
+                    //"-r {1} -b:v {2}k -c:v h264_nvenc -preset fast -y {3} ",
                     audioDeviceName,
                     settings.VideoFrameRate,
                     settings.VideoBitRate / 1000,

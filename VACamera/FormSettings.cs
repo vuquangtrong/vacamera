@@ -42,9 +42,17 @@ namespace VACamera
                         }
                         index++;
                     }
-                    if (listAudioSource.SelectedIndex < 0)
+                    if (listAudioSource.Items.Count > 0)
                     {
+                        if (listAudioSource.SelectedIndex < 0)
+                        {
+                            listAudioSource.SelectedIndex = 0;
+                        }
+                    } else
+                    {
+                        listAudioSource.Items.Add("Không có microphone");
                         listAudioSource.SelectedIndex = 0;
+                        Settings.SetAudioInputPath("");
                     }
                 }
                 else
@@ -72,16 +80,16 @@ namespace VACamera
                     int index2 = 0;
                     foreach (FilterInfo videoDevice in videoDevices)
                     {
-                        listCamera1.Items.Add(videoDevice.Name);
-                        listCamera2.Items.Add(videoDevice.Name);
+                        listCamera1.Items.Add(videoDevice.Name + "|" + videoDevice.MonikerString);
+                        listCamera2.Items.Add(videoDevice.Name + "|" + videoDevice.MonikerString);
 
-                        if (Settings.Camera1_InputPath.Equals(videoDevice.MonikerString))
+                        if (Settings.Camera1_InputPath.Equals(videoDevice.Name + "|" + videoDevice.MonikerString))
                         {
                             listCamera1.SelectedIndex = index1;
                         }
                         index1++;
 
-                        if (Settings.Camera2_InputPath.Equals(videoDevice.MonikerString))
+                        if (Settings.Camera2_InputPath.Equals(videoDevice.Name + "|" + videoDevice.MonikerString))
                         {
                             listCamera2.SelectedIndex = index2;
                         }
@@ -191,7 +199,7 @@ namespace VACamera
             if (!listCamera1.Text.Equals(Settings.Camera1_InputPath))
             {
                 Log.WriteLine("listCamera1 = " + listCamera1.Text);
-                Settings.SetCamera1_InputPath(videoDevices[listCamera1.SelectedIndex].MonikerString);
+                Settings.SetCamera1_InputPath(listCamera1.Text);
                 isDeviceChanged = true;
             }
             // do not select same device
@@ -216,7 +224,7 @@ namespace VACamera
             if (!listCamera2.Text.Equals(Settings.Camera2_InputPath))
             {
                 Log.WriteLine("listCamera2 = " + listCamera2.Text);
-                Settings.SetCamera2_InputPath(videoDevices[listCamera2.SelectedIndex].MonikerString);
+                Settings.SetCamera2_InputPath(listCamera2.Text);
                 isDeviceChanged = true;
             }
             // do not select same device

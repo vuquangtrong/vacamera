@@ -4,7 +4,7 @@
 #define USE_PINNED_MEMORY_BITMAP
 #endif
 
-//#define USE_SLOW_PC
+#define USE_SLOW_PC
 
 /*
 
@@ -1037,12 +1037,18 @@ namespace VACamera
                 ffmpeg.StartInfo.FileName = @"ffmpeg.exe";
                 ffmpeg.StartInfo.Arguments = String.Format(
 #if USE_PINNED_MEMORY_BITMAP
-                    "-f rawvideo -pix_fmt bgr24 -video_size 1280x720 -thread_queue_size 64 -i - " +
+                    // set video input: use system clock as timestamp, remove 0.5s at begining of video stream
+                    "-f rawvideo -use_wallclock_as_timestamps 1 -pix_fmt bgr24 -video_size 1280x720 -thread_queue_size 64 -ss 0.5 -i - " +
 #else
-                    "-f image2pipe -i pipe:.bmp " +
+                    "-f image2pipe -use_wallclock_as_timestamps 1 -thread_queue_size 64 -ss 0.5 -i pipe:.bmp " +
 #endif
-                    (audioDeviceName.Equals("") ? "" : "-f dshow -i audio=\"{0}\" ") +
+                    // set audio input: use system clock as timestamp
+                    (audioDeviceName.Equals("") ? "" : "-f dshow -use_wallclock_as_timestamps 1 -thread_queue_size 64 -i audio=\"{0}\" ") +
+                    // re-sample audio to synchronize with video frame
+                    "-filter_complex \"aresample\" " +
+                    // set video output: use hw encoder for intel quick-sync
                     "-r {1} -b:v {2}k -c:v h264_qsv -preset veryfast -y {3} ",
+                    // or use hw encoder for nvidia
                     //"-r {1} -b:v {2}k -c:v h264_nvenc -preset fast -y {3} ",
                     audioDeviceName,
                     settings.VideoFrameRate,

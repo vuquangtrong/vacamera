@@ -32,6 +32,7 @@ WizardStyle=modern
 Root: HKCU; Subkey: "SOFTWARE\VACamera"; Flags: uninsdeletekey
 Root: HKCU; Subkey: "SOFTWARE\VACamera\Settings"; ValueType: string; ValueName: "Name"; ValueData: "{code:GetUser|Name}"
 Root: HKCU; Subkey: "SOFTWARE\VACamera\Settings"; ValueType: string; ValueName: "Company"; ValueData: "{code:GetUser|Company}"
+Root: HKCU; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "VACamera"; ValueData: "{app}\{#MyAppExeName}"
 
 [Code]
 var

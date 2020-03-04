@@ -2,6 +2,7 @@
 
 #if USE_DIRECT_MEMORY_ACCESS
 #define USE_PINNED_MEMORY_BITMAP
+#define USE_DOUBLE_BUFFER
 #endif
 
 #define USE_SLOW_PC
@@ -94,6 +95,12 @@ namespace VACamera
         byte[] _videoFramePixels;
         IntPtr _videoFrameFirstPixelAddr;
         int _videoFrameStride;
+#if USE_DOUBLE_BUFFER
+        byte[] _videoFramePixels2;
+        IntPtr _videoFrameFirstPixelAddr2;
+        Bitmap _videoFrame2 = null;
+        bool _isFilledBackBuffer = false;
+#endif
 #endif
         Bitmap _videoFrame = null;
         Graphics _graphics = null;
@@ -122,6 +129,9 @@ namespace VACamera
 
         // Delegate type to be used as the Handler Routine for SCCH
         delegate bool ConsoleCtrlDelegate(uint CtrlType);
+
+        [DllImport("msvcrt.dll", SetLastError = false)]
+        static extern IntPtr memcpy(IntPtr dest, IntPtr src, int count);
 
         public FormMain()
         {
@@ -161,15 +171,27 @@ namespace VACamera
 #if USE_PINNED_MEMORY_BITMAP
             int pixelFormatSize = Image.GetPixelFormatSize(PixelFormat.Format24bppRgb) / 8;
             _videoFrameStride = Settings.VideoWidth * pixelFormatSize;
-            _videoFramePixels = new byte[_videoFrameStride * Settings.VideoHeight];
 
             // pin memory
+            _videoFramePixels = new byte[_videoFrameStride * Settings.VideoHeight];
             GCHandle.Alloc(_videoFramePixels, GCHandleType.Pinned);
             _videoFrameFirstPixelAddr = Marshal.UnsafeAddrOfPinnedArrayElement(_videoFramePixels, 0);
             _videoFrame = new Bitmap(Settings.VideoWidth, Settings.VideoHeight, _videoFrameStride, PixelFormat.Format24bppRgb, _videoFrameFirstPixelAddr);
 
+#if USE_DOUBLE_BUFFER
+            // pin memory in back-buffer
+            _videoFramePixels2 = new byte[_videoFrameStride * Settings.VideoHeight];
+            GCHandle.Alloc(_videoFramePixels2, GCHandleType.Pinned);
+            _videoFrameFirstPixelAddr2 = Marshal.UnsafeAddrOfPinnedArrayElement(_videoFramePixels2, 0);
+            _videoFrame2 = new Bitmap(Settings.VideoWidth, Settings.VideoHeight, _videoFrameStride, PixelFormat.Format24bppRgb, _videoFrameFirstPixelAddr2);
+            // binding preview to back-buffer
+            pictureFrame.Image = _videoFrame2;
+            pictureFrame.Invalidated += PictureFrame_Invalidated;
+#else
             // binding preview
             pictureFrame.Image = _videoFrame;
+#endif
+
 #else
             _videoFrame = new Bitmap(Settings.VideoWidth, Settings.VideoHeight, PixelFormat.Format24bppRgb);
 #endif
@@ -213,6 +235,14 @@ namespace VACamera
                 {
                     Close();
                 }
+            }
+        }
+
+        private void PictureFrame_Invalidated(object sender, InvalidateEventArgs e)
+        {
+            if(_isFilledBackBuffer)
+            {
+                _isFilledBackBuffer = false;
             }
         }
 
@@ -962,7 +992,28 @@ namespace VACamera
             if (pictureFrame != null)
             {
 #if USE_PINNED_MEMORY_BITMAP
+#if USE_DOUBLE_BUFFER
+                /*
+                if (_isFilledBackBuffer)
+                {
+                    pictureFrame.Invalidate();
+                }
+                else
+                {
+                    memcpy(_videoFrameFirstPixelAddr2, _videoFrameFirstPixelAddr, _videoFrameStride * Settings.VideoHeight);
+                }
+                _isFilledBackBuffer = !_isFilledBackBuffer;
+                */
+
+                if (!_isFilledBackBuffer)
+                {
+                    memcpy(_videoFrameFirstPixelAddr2, _videoFrameFirstPixelAddr, _videoFrameStride * Settings.VideoHeight);
+                    _isFilledBackBuffer = true;
+                    pictureFrame.Invalidate();
+                }
+#else
                 pictureFrame.Invalidate();
+#endif
 #else
                 UpdateLiveImageInvoker(pictureFrame, (Bitmap)_videoFrame.Clone());
 #endif

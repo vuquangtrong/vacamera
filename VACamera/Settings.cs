@@ -289,7 +289,7 @@ namespace VACamera
         {
             if (rate == null || rate.Equals(""))
             {
-                VideoBitRate = 1500 * 1000;
+                VideoBitRate = 1100 * 1000;
             }
             else
             {
@@ -317,7 +317,7 @@ namespace VACamera
         {
             if (rate == null || rate.Equals(""))
             {
-                VideoFrameRate = 24;
+                VideoFrameRate = 20;
             }
             else
             {

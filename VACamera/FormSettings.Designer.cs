@@ -167,6 +167,7 @@
             this.label3.Size = new System.Drawing.Size(129, 21);
             this.label3.TabIndex = 2;
             this.label3.Text = "Định dạng Video:";
+            this.label3.Visible = false;
             // 
             // listVideoFormat
             // 
@@ -179,6 +180,7 @@
             this.listVideoFormat.Name = "listVideoFormat";
             this.listVideoFormat.Size = new System.Drawing.Size(335, 29);
             this.listVideoFormat.TabIndex = 1;
+            this.listVideoFormat.Visible = false;
             this.listVideoFormat.SelectedIndexChanged += new System.EventHandler(this.listVideoFormat_SelectedIndexChanged);
             // 
             // label4
@@ -189,17 +191,19 @@
             this.label4.Size = new System.Drawing.Size(58, 21);
             this.label4.TabIndex = 2;
             this.label4.Text = "Bitrate:";
+            this.label4.Visible = false;
             // 
             // listBitRate
             // 
             this.listBitRate.FormattingEnabled = true;
             this.listBitRate.Items.AddRange(new object[] {
-            "1500000",
-            "3000000"});
+            "1000000",
+            "2000000"});
             this.listBitRate.Location = new System.Drawing.Point(319, 265);
             this.listBitRate.Name = "listBitRate";
             this.listBitRate.Size = new System.Drawing.Size(165, 29);
             this.listBitRate.TabIndex = 4;
+            this.listBitRate.Visible = false;
             this.listBitRate.SelectedIndexChanged += new System.EventHandler(this.listBitRate_SelectedIndexChanged);
             this.listBitRate.TextChanged += new System.EventHandler(this.listBitRate_TextChanged);
             // 
@@ -211,6 +215,7 @@
             this.label5.Size = new System.Drawing.Size(114, 21);
             this.label5.TabIndex = 2;
             this.label5.Text = "Số khung hình:";
+            this.label5.Visible = false;
             // 
             // listFrameRate
             // 
@@ -218,12 +223,12 @@
             this.listFrameRate.FormattingEnabled = true;
             this.listFrameRate.Items.AddRange(new object[] {
             "15",
-            "24",
-            "30"});
+            "24"});
             this.listFrameRate.Location = new System.Drawing.Point(147, 265);
             this.listFrameRate.Name = "listFrameRate";
             this.listFrameRate.Size = new System.Drawing.Size(102, 29);
             this.listFrameRate.TabIndex = 5;
+            this.listFrameRate.Visible = false;
             this.listFrameRate.SelectedIndexChanged += new System.EventHandler(this.listFrameRate_SelectedIndexChanged);
             // 
             // FormSettings

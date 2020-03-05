@@ -92,3 +92,6 @@
 
 0113_1341
 	use pinned memory to stream rawvideo to ffmpeg, reduce rendering+writing time to 2ms/frame
+
+0114_1252
+	auto select camera resolution which is closest to requested resolution

@@ -173,7 +173,13 @@ namespace VACamera
 
         public void SetAudioInputPath(string path)
         {
-            AudioInputPath = path;
+            if (path.Contains("|"))
+            {
+                AudioInputPath = path.Split('|')[1];
+            } else
+            {
+                AudioInputPath = path;
+            }
             Log.WriteLine("AudioInputPath = " + AudioInputPath);
         }
 
@@ -243,13 +249,25 @@ namespace VACamera
 
         public void SetCamera1_InputPath(string path)
         {
-            Camera1_InputPath = path;
+            if (path.Contains("|"))
+            {
+                Camera1_InputPath = path.Split('|')[1];
+            } else
+            {
+                Camera1_InputPath = path;
+            }
             Log.WriteLine("Camera1_InputPath = " + Camera1_InputPath);
         }
 
         public void SetCamera2_InputPath(string path)
         {
-            Camera2_InputPath = path;
+            if (path.Contains("|"))
+            {
+                Camera2_InputPath = path.Split('|')[1];
+            } else
+            {
+                Camera2_InputPath = path;
+            }
             Log.WriteLine("Camera2_InputPath = " + Camera2_InputPath);
         }
 
@@ -299,7 +317,7 @@ namespace VACamera
                 }
                 catch (Exception ex)
                 {
-                    VideoBitRate = 1500 * 1000;
+                    VideoBitRate = 1100 * 1000;
                     Log.WriteLine(ex.ToString());
                 }
             }
@@ -327,7 +345,7 @@ namespace VACamera
                 }
                 catch (Exception ex)
                 {
-                    VideoFrameRate = 24;
+                    VideoFrameRate = 20;
                     Log.WriteLine(ex.ToString());
                 }
             }

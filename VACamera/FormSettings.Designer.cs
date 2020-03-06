@@ -197,7 +197,7 @@
             // 
             this.listBitRate.FormattingEnabled = true;
             this.listBitRate.Items.AddRange(new object[] {
-            "1000000",
+            "1100000",
             "2000000"});
             this.listBitRate.Location = new System.Drawing.Point(319, 265);
             this.listBitRate.Name = "listBitRate";

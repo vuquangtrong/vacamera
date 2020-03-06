@@ -36,7 +36,7 @@ namespace VACamera
                         }
 
                         listAudioSource.Items.Add(device.Description + "|" + device.Guid.ToString());
-                        if (Settings.AudioInputPath.Equals(device.Description + "|" + device.Guid.ToString()))
+                        if (Settings.AudioInputPath.Equals(/* device.Description + "|" + */ device.Guid.ToString()))
                         {
                             listAudioSource.SelectedIndex = index;
                         }
@@ -83,13 +83,13 @@ namespace VACamera
                         listCamera1.Items.Add(videoDevice.Name + "|" + videoDevice.MonikerString);
                         listCamera2.Items.Add(videoDevice.Name + "|" + videoDevice.MonikerString);
 
-                        if (Settings.Camera1_InputPath.Equals(videoDevice.Name + "|" + videoDevice.MonikerString))
+                        if (Settings.Camera1_InputPath.Equals(/* videoDevice.Name + "|" + */ videoDevice.MonikerString))
                         {
                             listCamera1.SelectedIndex = index1;
                         }
                         index1++;
 
-                        if (Settings.Camera2_InputPath.Equals(videoDevice.Name + "|" + videoDevice.MonikerString))
+                        if (Settings.Camera2_InputPath.Equals(/* videoDevice.Name + "|" + */ videoDevice.MonikerString))
                         {
                             listCamera2.SelectedIndex = index2;
                         }

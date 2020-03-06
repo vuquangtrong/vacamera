@@ -63,7 +63,7 @@ namespace VACamera
             this.aboutToolStripMenuItem});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
-            this.menuStrip1.Size = new System.Drawing.Size(1008, 29);
+            this.menuStrip1.Size = new System.Drawing.Size(1264, 29);
             this.menuStrip1.TabIndex = 0;
             this.menuStrip1.Text = "menuStrip1";
             // 
@@ -100,14 +100,14 @@ namespace VACamera
             // aboutToolStripMenuItem
             // 
             this.aboutToolStripMenuItem.Name = "aboutToolStripMenuItem";
-            this.aboutToolStripMenuItem.Size = new System.Drawing.Size(91, 25);
-            this.aboutToolStripMenuItem.Text = "&Phiên bản";
+            this.aboutToolStripMenuItem.Size = new System.Drawing.Size(116, 25);
+            this.aboutToolStripMenuItem.Text = "&Phiên bản 2.5";
             this.aboutToolStripMenuItem.Click += new System.EventHandler(this.aboutToolStripMenuItem_Click);
             // 
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(720, 514);
+            this.label1.Location = new System.Drawing.Point(840, 680);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(125, 21);
             this.label1.TabIndex = 4;
@@ -116,7 +116,7 @@ namespace VACamera
             // txtTimeRun
             // 
             this.txtTimeRun.AutoSize = true;
-            this.txtTimeRun.Location = new System.Drawing.Point(851, 514);
+            this.txtTimeRun.Location = new System.Drawing.Point(971, 680);
             this.txtTimeRun.Name = "txtTimeRun";
             this.txtTimeRun.Size = new System.Drawing.Size(70, 21);
             this.txtTimeRun.TabIndex = 4;
@@ -125,7 +125,7 @@ namespace VACamera
             // txtTimeLeft
             // 
             this.txtTimeLeft.AutoSize = true;
-            this.txtTimeLeft.Location = new System.Drawing.Point(851, 535);
+            this.txtTimeLeft.Location = new System.Drawing.Point(971, 701);
             this.txtTimeLeft.Name = "txtTimeLeft";
             this.txtTimeLeft.Size = new System.Drawing.Size(70, 21);
             this.txtTimeLeft.TabIndex = 4;
@@ -134,7 +134,7 @@ namespace VACamera
             // label5
             // 
             this.label5.AutoSize = true;
-            this.label5.Location = new System.Drawing.Point(720, 535);
+            this.label5.Location = new System.Drawing.Point(840, 701);
             this.label5.Name = "label5";
             this.label5.Size = new System.Drawing.Size(127, 21);
             this.label5.TabIndex = 4;
@@ -148,7 +148,7 @@ namespace VACamera
             // signalRecord
             // 
             this.signalRecord.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.signalRecord.Location = new System.Drawing.Point(937, 31);
+            this.signalRecord.Location = new System.Drawing.Point(1179, 57);
             this.signalRecord.Name = "signalRecord";
             this.signalRecord.Size = new System.Drawing.Size(48, 48);
             this.signalRecord.TabIndex = 6;
@@ -158,7 +158,7 @@ namespace VACamera
             // 
             this.btnWriteDisk.Image = global::VACamera.Properties.Resources.burn;
             this.btnWriteDisk.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.btnWriteDisk.Location = new System.Drawing.Point(956, 514);
+            this.btnWriteDisk.Location = new System.Drawing.Point(1212, 717);
             this.btnWriteDisk.Name = "btnWriteDisk";
             this.btnWriteDisk.Size = new System.Drawing.Size(40, 40);
             this.btnWriteDisk.TabIndex = 5;
@@ -171,7 +171,7 @@ namespace VACamera
             // 
             this.btnReplay.Image = global::VACamera.Properties.Resources.play;
             this.btnReplay.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.btnReplay.Location = new System.Drawing.Point(572, 517);
+            this.btnReplay.Location = new System.Drawing.Point(692, 683);
             this.btnReplay.Name = "btnReplay";
             this.btnReplay.Size = new System.Drawing.Size(140, 40);
             this.btnReplay.TabIndex = 4;
@@ -185,7 +185,7 @@ namespace VACamera
             // 
             this.btnStop.Image = global::VACamera.Properties.Resources.stop;
             this.btnStop.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.btnStop.Location = new System.Drawing.Point(407, 517);
+            this.btnStop.Location = new System.Drawing.Point(527, 683);
             this.btnStop.Name = "btnStop";
             this.btnStop.Size = new System.Drawing.Size(140, 40);
             this.btnStop.TabIndex = 3;
@@ -199,7 +199,7 @@ namespace VACamera
             // 
             this.btnPause.Image = global::VACamera.Properties.Resources.pause;
             this.btnPause.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.btnPause.Location = new System.Drawing.Point(242, 517);
+            this.btnPause.Location = new System.Drawing.Point(362, 683);
             this.btnPause.Name = "btnPause";
             this.btnPause.Size = new System.Drawing.Size(140, 40);
             this.btnPause.TabIndex = 2;
@@ -213,7 +213,7 @@ namespace VACamera
             // 
             this.btnRecord.Image = global::VACamera.Properties.Resources.rec;
             this.btnRecord.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.btnRecord.Location = new System.Drawing.Point(77, 517);
+            this.btnRecord.Location = new System.Drawing.Point(197, 683);
             this.btnRecord.Name = "btnRecord";
             this.btnRecord.Size = new System.Drawing.Size(140, 40);
             this.btnRecord.TabIndex = 1;
@@ -226,11 +226,11 @@ namespace VACamera
             // pictureFrame
             // 
             this.pictureFrame.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.pictureFrame.Location = new System.Drawing.Point(77, 31);
-            this.pictureFrame.MaximumSize = new System.Drawing.Size(854, 480);
-            this.pictureFrame.MinimumSize = new System.Drawing.Size(854, 480);
+            this.pictureFrame.Location = new System.Drawing.Point(110, 57);
+            this.pictureFrame.MaximumSize = new System.Drawing.Size(1024, 576);
+            this.pictureFrame.MinimumSize = new System.Drawing.Size(1024, 576);
             this.pictureFrame.Name = "pictureFrame";
-            this.pictureFrame.Size = new System.Drawing.Size(854, 480);
+            this.pictureFrame.Size = new System.Drawing.Size(1024, 576);
             this.pictureFrame.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
             this.pictureFrame.TabIndex = 2;
             this.pictureFrame.TabStop = false;
@@ -238,7 +238,7 @@ namespace VACamera
             // FormMain
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
-            this.ClientSize = new System.Drawing.Size(1008, 561);
+            this.ClientSize = new System.Drawing.Size(1264, 761);
             this.ControlBox = false;
             this.Controls.Add(this.signalRecord);
             this.Controls.Add(this.txtTimeLeft);
@@ -256,9 +256,9 @@ namespace VACamera
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.MainMenuStrip = this.menuStrip1;
             this.MaximizeBox = false;
-            this.MaximumSize = new System.Drawing.Size(1024, 600);
+            this.MaximumSize = new System.Drawing.Size(1280, 800);
             this.MinimizeBox = false;
-            this.MinimumSize = new System.Drawing.Size(1024, 600);
+            this.MinimumSize = new System.Drawing.Size(1280, 800);
             this.Name = "FormMain";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "VA Camera";

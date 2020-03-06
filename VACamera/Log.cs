@@ -1,4 +1,4 @@
-﻿//#define USE_SLOW_PC
+﻿#define USE_SLOW_PC // do not write log on slow PC
 
 using System;
 using System.Diagnostics;
@@ -12,6 +12,7 @@ namespace VACamera
 
         public static void Init()
         {
+#if !USE_SLOW_PC
             string logPath = "C:\\logs";
 
             try
@@ -32,14 +33,17 @@ namespace VACamera
                 WriteLine("Cannot redirect log to a file!!!");
                 WriteLine(ex.ToString());
             }
+#endif
         }
 
         public static void Close()
         {
+#if !USE_SLOW_PC
             if (streamWriter != null)
             {
                 streamWriter.Close();
             }
+#endif
         }
 
         public static void Write(string message)

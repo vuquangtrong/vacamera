@@ -1,11 +1,11 @@
-﻿#define USE_DIRECT_MEMORY_ACCESS
+﻿#define USE_SLOW_PC // do not write log on slow PC
 
-#if USE_DIRECT_MEMORY_ACCESS
-#define USE_PINNED_MEMORY_BITMAP
-#define USE_DOUBLE_BUFFER
+#define USE_DIRECT_MEMORY_ACCESS // for faster access to large image, use unsafe pointer to access bitmap data directly in memory
+
+#if USE_DIRECT_MEMORY_ACCESS // below settings are available only if USE_DIRECT_MEMORY_ACCESS enabled
+    #define USE_PINNED_MEMORY_BITMAP // using pinned memory will allocate fixed amount of memory for final bitmap, no need to decompress bitmap multiple times
+    #define USE_DOUBLE_BUFFER // while attaching a bitmap to picturebox, double buffer ensures that picture only show image when image is completely filled
 #endif
-
-#define USE_SLOW_PC
 
 /*
 
@@ -30,7 +30,7 @@ Write H264
 Mode        Single      Side2Side       Overlay
 CPU         7.5 ms      7.7 ms          7.8 ms
 GPU         6.6 ms      6.6 ms          6.6 ms
-GPU+Pinned  2.8 ms      2.0 ms          3.0 ms
+GPU+Pinned  2.8 ms      2.0 ms          3.0 ms    << Max FPS = 1000/3 = 333 fps
 
 */
 
@@ -104,7 +104,12 @@ namespace VACamera
 #endif
         Bitmap _videoFrame = null;
         Graphics _graphics = null;
-        DateTime lastVideoFrameTime = DateTime.MinValue;
+
+        Stopwatch stopWatch = new Stopwatch();
+#if !USE_SLOW_PC
+        int renderCount = 0;
+        double totalRenderTime = 0;
+#endif
 
         Font textFont = new Font("Tahoma", 18);
         StringFormat textDirectionRTL = new StringFormat(StringFormatFlags.DirectionRightToLeft);
@@ -381,7 +386,7 @@ namespace VACamera
                             continue;
                         }
 
-                        if (settings.AudioInputPath.Equals(device.Description + "|" + device.Guid.ToString()))
+                        if (settings.AudioInputPath.Equals(/* device.Description + "|" + */ device.Guid.ToString()))
                         {
                             audioDeviceInfo = device;
                         }
@@ -424,13 +429,13 @@ namespace VACamera
                     // find last used devices
                     foreach (FilterInfo device in videoDevices)
                     {
-                        if (settings.Camera1_InputPath.Equals(device.Name + "|" + device.MonikerString))
+                        if (settings.Camera1_InputPath.Equals(/* device.Name + "|" + */ device.MonikerString))
                         {
                             device1_Name = device.Name;
                             device1_MonikerString = device.MonikerString;
                         }
 
-                        if (settings.Camera2_InputPath.Equals(device.Name + "|" + device.MonikerString))
+                        if (settings.Camera2_InputPath.Equals(/* device.Name + "|" + */ device.MonikerString))
                         {
                             device2_Name = device.Name;
                             device2_MonikerString = device.MonikerString;
@@ -718,11 +723,6 @@ namespace VACamera
             }
         }
 
-        Stopwatch stopWatch = new Stopwatch();
-#if !USE_SLOW_PC
-        int renderCount = 0;
-        double totalRenderTime = 0;
-#endif
         private void RenderVideoFrame()
         {
             stopWatch.Reset();
@@ -1117,7 +1117,6 @@ namespace VACamera
                 // track new file
                 AddFileToRecordList(outputFile, false);
 
-                lastVideoFrameTime = DateTime.MinValue;
                 timerRecord.Start();
                 videoRecordState = VideoRecordState.RECORDING;
                 Log.WriteLine(">>> START recording");

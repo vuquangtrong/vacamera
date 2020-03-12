@@ -70,6 +70,7 @@ namespace VACamera
         static readonly Object syncRender = new Object();
 
         string outputFolder = "C:\\records";
+        string recordTxt = "C:\\records\\records.txt";
         string outputFile = "";
         string replayFile = "";
         string videoExtension = ".mp4";
@@ -141,7 +142,7 @@ namespace VACamera
         public FormMain()
         {
             InitializeComponent();
-
+            this.KeyPreview = true;
             try
             {
                 Directory.CreateDirectory(outputFolder);
@@ -1052,7 +1053,7 @@ namespace VACamera
 
         private void AddFileToRecordList(string file, bool reset)
         {
-            string command = "echo file '" + file + "' " + (reset ? ">" : ">>") + " records.txt";
+            string command = "echo file '" + file + "' " + (reset ? ">" : ">>") + recordTxt;
             RunCommand(command);
         }
 
@@ -1061,7 +1062,7 @@ namespace VACamera
             recordPart = 0;
             try
             {
-                File.Delete("records.txt");
+                File.Delete(recordTxt);
             }
             catch (Exception ex)
             {
@@ -1198,7 +1199,7 @@ namespace VACamera
                 {
                     File.Delete(replayFile);
                 }
-                String command_replay = "ffmpeg.exe -f concat -safe 0 -i records.txt -c copy \"" + replayFile + "\"";
+                String command_replay = "ffmpeg.exe -f concat -safe 0 -i " + recordTxt + " -c copy \"" + replayFile + "\"";
                 RunCommand(command_replay);
 
 

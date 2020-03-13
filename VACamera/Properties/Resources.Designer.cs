@@ -72,9 +72,9 @@ namespace VACamera.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap burn {
+        internal static System.Drawing.Bitmap blink {
             get {
-                object obj = ResourceManager.GetObject("burn", resourceCulture);
+                object obj = ResourceManager.GetObject("blink", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -82,9 +82,9 @@ namespace VACamera.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap logo {
+        internal static System.Drawing.Bitmap burn {
             get {
-                object obj = ResourceManager.GetObject("logo", resourceCulture);
+                object obj = ResourceManager.GetObject("burn", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

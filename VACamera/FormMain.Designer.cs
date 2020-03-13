@@ -57,13 +57,15 @@ namespace VACamera
             // menuStrip1
             // 
             this.menuStrip1.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.menuStrip1.GripMargin = new System.Windows.Forms.Padding(2, 2, 0, 2);
+            this.menuStrip1.ImageScalingSize = new System.Drawing.Size(24, 24);
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.fileToolStripMenuItem,
             this.settingsToolStripMenuItem,
             this.aboutToolStripMenuItem});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
-            this.menuStrip1.Size = new System.Drawing.Size(1264, 29);
+            this.menuStrip1.Size = new System.Drawing.Size(1258, 42);
             this.menuStrip1.TabIndex = 0;
             this.menuStrip1.Text = "menuStrip1";
             // 
@@ -73,7 +75,7 @@ namespace VACamera
             this.newSessionToolStripMenuItem,
             this.exitToolStripMenuItem});
             this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
-            this.fileToolStripMenuItem.Size = new System.Drawing.Size(46, 25);
+            this.fileToolStripMenuItem.Size = new System.Drawing.Size(68, 38);
             this.fileToolStripMenuItem.Text = "&File";
             // 
             // newSessionToolStripMenuItem
@@ -81,7 +83,7 @@ namespace VACamera
             this.newSessionToolStripMenuItem.Margin = new System.Windows.Forms.Padding(0, 5, 0, 5);
             this.newSessionToolStripMenuItem.Name = "newSessionToolStripMenuItem";
             this.newSessionToolStripMenuItem.Padding = new System.Windows.Forms.Padding(0, 6, 0, 6);
-            this.newSessionToolStripMenuItem.Size = new System.Drawing.Size(212, 36);
+            this.newSessionToolStripMenuItem.Size = new System.Drawing.Size(323, 48);
             this.newSessionToolStripMenuItem.Text = "&Phiên làm việc mới";
             this.newSessionToolStripMenuItem.Click += new System.EventHandler(this.newSessionToolStripMenuItem_Click);
             // 
@@ -91,22 +93,22 @@ namespace VACamera
             this.exitToolStripMenuItem.Margin = new System.Windows.Forms.Padding(0, 5, 0, 5);
             this.exitToolStripMenuItem.Name = "exitToolStripMenuItem";
             this.exitToolStripMenuItem.Padding = new System.Windows.Forms.Padding(0, 6, 0, 6);
-            this.exitToolStripMenuItem.Size = new System.Drawing.Size(212, 36);
+            this.exitToolStripMenuItem.Size = new System.Drawing.Size(323, 48);
             this.exitToolStripMenuItem.Text = "&Thoát";
             this.exitToolStripMenuItem.Click += new System.EventHandler(this.exitToolStripMenuItem_Click);
             // 
             // settingsToolStripMenuItem
             // 
             this.settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
-            this.settingsToolStripMenuItem.Size = new System.Drawing.Size(70, 25);
+            this.settingsToolStripMenuItem.Size = new System.Drawing.Size(105, 38);
             this.settingsToolStripMenuItem.Text = "&Cài đặt";
             this.settingsToolStripMenuItem.Click += new System.EventHandler(this.settingsToolStripMenuItem_Click);
             // 
             // aboutToolStripMenuItem
             // 
             this.aboutToolStripMenuItem.Name = "aboutToolStripMenuItem";
-            this.aboutToolStripMenuItem.Size = new System.Drawing.Size(116, 25);
-            this.aboutToolStripMenuItem.Text = "&Phiên bản 2.7";
+            this.aboutToolStripMenuItem.Size = new System.Drawing.Size(176, 38);
+            this.aboutToolStripMenuItem.Text = "&Phiên bản 2.8";
             this.aboutToolStripMenuItem.Click += new System.EventHandler(this.aboutToolStripMenuItem_Click);
             // 
             // label1
@@ -114,7 +116,7 @@ namespace VACamera
             this.label1.AutoSize = true;
             this.label1.Location = new System.Drawing.Point(838, 706);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(125, 21);
+            this.label1.Size = new System.Drawing.Size(194, 32);
             this.label1.TabIndex = 4;
             this.label1.Text = "Thời gian đã ghi:";
             // 
@@ -123,7 +125,7 @@ namespace VACamera
             this.txtTimeRun.AutoSize = true;
             this.txtTimeRun.Location = new System.Drawing.Point(969, 706);
             this.txtTimeRun.Name = "txtTimeRun";
-            this.txtTimeRun.Size = new System.Drawing.Size(70, 21);
+            this.txtTimeRun.Size = new System.Drawing.Size(103, 32);
             this.txtTimeRun.TabIndex = 4;
             this.txtTimeRun.Text = "00:00:00";
             // 
@@ -132,7 +134,7 @@ namespace VACamera
             this.txtTimeLeft.AutoSize = true;
             this.txtTimeLeft.Location = new System.Drawing.Point(969, 727);
             this.txtTimeLeft.Name = "txtTimeLeft";
-            this.txtTimeLeft.Size = new System.Drawing.Size(70, 21);
+            this.txtTimeLeft.Size = new System.Drawing.Size(103, 32);
             this.txtTimeLeft.TabIndex = 4;
             this.txtTimeLeft.Text = "00:00:00";
             // 
@@ -141,7 +143,7 @@ namespace VACamera
             this.label5.AutoSize = true;
             this.label5.Location = new System.Drawing.Point(838, 727);
             this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(127, 21);
+            this.label5.Size = new System.Drawing.Size(197, 32);
             this.label5.TabIndex = 4;
             this.label5.Text = "Thời gian còn lại:";
             // 
@@ -243,7 +245,7 @@ namespace VACamera
             // FormMain
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
-            this.ClientSize = new System.Drawing.Size(1264, 761);
+            this.ClientSize = new System.Drawing.Size(1258, 744);
             this.ControlBox = false;
             this.Controls.Add(this.signalRecord);
             this.Controls.Add(this.txtTimeLeft);

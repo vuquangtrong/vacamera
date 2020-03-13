@@ -8,7 +8,7 @@ namespace VACamera
 {
     static class Log
     {
-        static StreamWriter streamWriter = null;
+        //static StreamWriter streamWriter = null;
 
         public static void Init()
         {

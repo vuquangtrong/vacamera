@@ -277,8 +277,7 @@ namespace VACamera
             {
                 file.Delete();
             }
-
-            //RunCommand("shutdown -s -t 0");
+            RunCommand("shutdown -s -t 0");
         }
 
         private void VideoRenderWorker()
@@ -1208,22 +1207,50 @@ namespace VACamera
 
                 Thread.Sleep(1000);
 
-                // remove segmented files
-                //var dir = new DirectoryInfo(outputFolder);
-                //foreach (var file in dir.EnumerateFiles("*" + videoExtension))
-                //{
-                //    if (file.FullName.Equals(outputFile))
-                //        continue;
+                //Update correct Duration @@!
+                string outPut = "";
 
-                //    try
-                //    {
-                //        file.Delete();
-                //    }
-                //    catch (Exception ex)
-                //    {
-                //        Log.WriteLine(ex.ToString());
-                //    }
-                //}
+                System.Text.RegularExpressions.Regex re = null;
+                System.Text.RegularExpressions.Match m = null;
+
+                System.IO.StreamReader SROutput = null;
+
+                //Get ready with ProcessStartInfo
+                ffmpeg = new Process();
+                ffmpeg.StartInfo.FileName = @"ffmpeg.exe";
+                ffmpeg.StartInfo.Arguments = String.Format("-i \"{0}\" ", replayFile);
+                ffmpeg.StartInfo.UseShellExecute = false;
+                ffmpeg.StartInfo.CreateNoWindow = true;
+                ffmpeg.StartInfo.RedirectStandardError = true;
+
+                ffmpeg.Start();
+                // Divert output
+                SROutput = ffmpeg.StandardError;
+
+                // Read all
+                outPut = SROutput.ReadToEnd();
+
+                // Please donot forget to call WaitForExit() after calling SROutput.ReadToEnd
+
+                ffmpeg.WaitForExit();
+                ffmpeg.Close();
+                ffmpeg.Dispose();
+                SROutput.Close();
+                SROutput.Dispose();
+
+                //get duration
+
+                re = new System.Text.RegularExpressions.Regex("[D|d]uration:.((\\d|:|\\.)*)");
+                m = re.Match(outPut);
+
+                if (m.Success)
+                {
+                    //Means the output has cantained the string "Duration"
+                    string temp = m.Groups[1].Value;
+                    string[] timepieces = temp.Split('.');
+                    txtTimeRun.Text = timepieces[0];
+                    recordTime = (int)TimeSpan.Parse(timepieces[0]).TotalSeconds;
+                }
             }
         }
 
@@ -1262,17 +1289,18 @@ namespace VACamera
                 MessageBox.Show("Đã quá thời lượng ghi tối đa." + Environment.NewLine + "Vui lòng nhấn kết thúc!", "Thông báo", MessageBoxButtons.OK);
             }
 
-            if (videoRecordState == VideoRecordState.RECORDING)
-            {
-                if (recordTime % 2 == 0)
-                {
-                    signalRecord.BackgroundImage = global::VACamera.Properties.Resources.rec_on;
-                }
-                else
-                {
-                    signalRecord.BackgroundImage = global::VACamera.Properties.Resources.rec_off;
-                }
-            }
+            //if (videoRecordState == VideoRecordState.RECORDING)
+            //{
+            //    signalrecord.backgroundimage = global::vacamera.properties.resources.blink;
+            //    if (recordtime % 2 == 0)
+            //    {
+            //        signalrecord.backgroundimage = global::vacamera.properties.resources.rec_on;
+            //    }
+            //    else
+            //    {
+            //        signalrecord.backgroundimage = global::vacamera.properties.resources.rec_off;
+            //    }
+            //}
         }
 
         private void exitToolStripMenuItem_Click(object sender, EventArgs e)
@@ -1369,7 +1397,7 @@ namespace VACamera
                 btnWriteDisk.Enabled = false;
 
                 settingsToolStripMenuItem.Enabled = false; // do not change settings during recording
-                signalRecord.BackgroundImage = global::VACamera.Properties.Resources.rec_on;
+                signalRecord.Image = global::VACamera.Properties.Resources.blink;
 
                 StartRecording();
             }
@@ -1381,7 +1409,7 @@ namespace VACamera
             {
 
                 btnPause.Enabled = false;
-                signalRecord.BackgroundImage = global::VACamera.Properties.Resources.rec_pause;
+                signalRecord.Image = global::VACamera.Properties.Resources.rec_pause;
 
                 StopRecording(true);
                 //PauseRecording();

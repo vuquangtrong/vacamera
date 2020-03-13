@@ -24,7 +24,7 @@ namespace VACamera
 
         private void FormAbout_Load(object sender, EventArgs e)
         {
-            label1.Text = "VA Camera 2.7" + Environment.NewLine + "Tác giả";
+            label1.Text = "VA Camera 2.8" + Environment.NewLine + "Tác giả";
         }
     }
 }

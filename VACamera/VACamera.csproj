@@ -240,6 +240,7 @@
     </Content>
     <None Include="Icons\beep.wav" />
     <None Include="Icons\logo.png" />
+    <None Include="Icons\blink.gif" />
     <Content Include="webcam.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

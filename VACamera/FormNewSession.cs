@@ -106,18 +106,7 @@ namespace VACamera
             if (MessageBox.Show("Thoát ứng dụng và Tắt máy?", "Cảnh báo", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
             {
                 System.Windows.Forms.Application.Exit();
-                //string command = "shutdown -s -t 0";
-                //Process process = new Process();
-                //ProcessStartInfo startInfo = new ProcessStartInfo();
-
-                //startInfo.WindowStyle = ProcessWindowStyle.Hidden;
-                //startInfo.FileName = "cmd.exe";
-                //startInfo.Arguments = "/C " + command;
-                //process.StartInfo = startInfo;
-                //process.Start();
-                //process.WaitForExit();
             }
-            //Close();
         }
 
         private void timer1_Tick(object sender, EventArgs e)

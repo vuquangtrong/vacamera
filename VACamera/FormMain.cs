@@ -143,6 +143,9 @@ namespace VACamera
         {
             InitializeComponent();
             this.KeyPreview = true;
+            var fi = new FileInfo(Application.ExecutablePath);
+            Directory.SetCurrentDirectory(fi.DirectoryName);
+            Log.WriteLine("DIR NAME = " + fi.DirectoryName);
             try
             {
                 Directory.CreateDirectory(outputFolder);
@@ -270,7 +273,6 @@ namespace VACamera
             }
             StopDevices();
             StopRender();
-
             //Delete all file when exit
             DirectoryInfo di = new DirectoryInfo(outputFolder);
             foreach (FileInfo file in di.GetFiles())
@@ -1305,6 +1307,10 @@ namespace VACamera
 
         private void exitToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            if (IsFileLocked())
+            {
+                return;
+            }
             if (MessageBox.Show("Thoát ứng dụng và tắt máy?", "Cảnh báo", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
             {
                 Close();
@@ -1313,6 +1319,11 @@ namespace VACamera
 
         private void newSessionToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            if (IsFileLocked())
+            {
+                return;
+            }
+
             if (MessageBox.Show("Tạo phiên làm việc mới?", "Cảnh báo", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
             {
                 Hide();
@@ -1388,6 +1399,11 @@ namespace VACamera
 
         private void btnRecord_Click(object sender, EventArgs e)
         {
+            if (IsFileLocked())
+            {
+                return;
+            }
+
             if (videoRecordState == VideoRecordState.IDLE)
             {
                 btnRecord.Enabled = false;
@@ -1507,6 +1523,27 @@ namespace VACamera
                 default:
                     break;
             }
+        }
+
+        private bool IsFileLocked()
+        {
+            DirectoryInfo di = new DirectoryInfo(outputFolder);
+            foreach (FileInfo file in di.GetFiles())
+            {
+                try
+                {
+                    using (FileStream stream = file.Open(FileMode.Open, FileAccess.Read, FileShare.None))
+                    {
+                        stream.Close();
+                    }
+                }
+                catch (IOException)
+                {
+                    MessageBox.Show("File đang được sử dụng, hãy tắt chương trình đang sử dụng khác!");
+                    return true;
+                }
+            }
+            return false;
         }
     }
 }

@@ -15,11 +15,11 @@ namespace VACamera
             SessionInfo = new SessionInfo();
             InitializeComponent();
 
-            textName1.Text = "Thông tin 1";
-            textName2.Text = "Thông tin 2";
-            textName3.Text = "Thông tin 3";
-            textName4.Text = "Thông tin 4";
-            textName5.Text = "Thông tin 5";
+            //textName1.Text = "Thông tin 1";
+            //textName2.Text = "Thông tin 2";
+            //textName3.Text = "Thông tin 3";
+            //textName4.Text = "Thông tin 4";
+            //textName5.Text = "Thông tin 5";
 
             Hide();
         }

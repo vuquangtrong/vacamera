@@ -488,8 +488,8 @@ namespace VACamera
                             var percent = (int)((100 * writtenSectors) / burnData.sectorCount);
                             txtStatus1.Text = string.Format("Tiến trình: {0}%", percent);
                             progressBar1.Value = percent;
-                            TimeSpan timeRun = TimeSpan.FromSeconds(_burnData1.remainingTime);
-                            txtTimeLeft1.Text = timeRun.ToString("mm':'ss");
+                            //TimeSpan timeRun = TimeSpan.FromSeconds(_burnData1.remainingTime);
+                            //txtTimeLeft1.Text = timeRun.ToString("mm':'ss");
                         }
                         else
                         {
@@ -545,8 +545,8 @@ namespace VACamera
                             var percent = (int)((100 * writtenSectors) / burnData.sectorCount);
                             txtStatus2.Text = string.Format("Tiến trình: {0}%", percent);
                             progressBar2.Value = percent;
-                            TimeSpan timeRun = TimeSpan.FromSeconds(_burnData2.remainingTime);
-                            txtTimeLeft2.Text = timeRun.ToString("mm':'ss");
+                            //TimeSpan timeRun = TimeSpan.FromSeconds(_burnData2.remainingTime);
+                            //txtTimeLeft2.Text = timeRun.ToString("mm':'ss");
                         }
                         else
                         {
@@ -612,7 +612,7 @@ namespace VACamera
 
             // IDiscFormat2DataEventArgs Interface
             _burnData1.elapsedTime = eventArgs.ElapsedTime;
-            _burnData1.remainingTime = eventArgs.RemainingTime;
+            //_burnData1.remainingTime = eventArgs.RemainingTime;
             _burnData1.totalTime = eventArgs.TotalTime;
 
             // IWriteEngine2EventArgs Interface
@@ -649,7 +649,7 @@ namespace VACamera
 
             // IDiscFormat2DataEventArgs Interface
             _burnData2.elapsedTime = eventArgs.ElapsedTime;
-            _burnData2.remainingTime = eventArgs.RemainingTime;
+            //_burnData2.remainingTime = eventArgs.RemainingTime;
             _burnData2.totalTime = eventArgs.TotalTime;
 
             // IWriteEngine2EventArgs Interface

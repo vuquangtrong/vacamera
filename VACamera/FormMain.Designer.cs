@@ -108,7 +108,7 @@ namespace VACamera
             // 
             this.aboutToolStripMenuItem.Name = "aboutToolStripMenuItem";
             this.aboutToolStripMenuItem.Size = new System.Drawing.Size(176, 38);
-            this.aboutToolStripMenuItem.Text = "&Phiên bản 2.9";
+            this.aboutToolStripMenuItem.Text = "&Phiên bản 2.9.2";
             this.aboutToolStripMenuItem.Click += new System.EventHandler(this.aboutToolStripMenuItem_Click);
             // 
             // label1

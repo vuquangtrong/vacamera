@@ -217,6 +217,7 @@
             this.txtTimeLeft2.TabIndex = 2;
             this.txtTimeLeft2.Text = "00:00";
             this.txtTimeLeft2.TextAlign = System.Drawing.ContentAlignment.TopRight;
+            this.txtTimeLeft2.Visible = false;
             // 
             // txtTimeLeft1
             // 
@@ -227,6 +228,7 @@
             this.txtTimeLeft1.TabIndex = 2;
             this.txtTimeLeft1.Text = "00:00";
             this.txtTimeLeft1.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            this.txtTimeLeft1.Visible = false;
             // 
             // label7
             // 

@@ -1102,7 +1102,7 @@ namespace VACamera
                     // set video output: use hw encoder for intel quick-sync
                     "-r {1} -b:v {2}k -c:v h264_qsv -preset veryfast -y {3} ",
                     // or use hw encoder for nvidia
-                    //"-r {1} -b:v {2}k -c:v h264_nvenc -preset fast -y {3} ",
+                    //"-r {1} -b:v {2}k -c:v h264_amf -preset fast -y {3} ",
                     audioDeviceName,
                     settings.VideoFrameRate,
                     settings.VideoBitRate / 1000,
@@ -1453,7 +1453,7 @@ namespace VACamera
                 //StopRecording(false);
                 //Thread.Sleep(1000);
 
-                //StopDevices(); // this method is slow
+                StopDevices(); // this method is slow
                 PausePreview();
 
                 btnWriteDisk_Click(btnWriteDisk, EventArgs.Empty);

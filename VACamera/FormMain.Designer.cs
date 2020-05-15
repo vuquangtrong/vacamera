@@ -49,6 +49,7 @@ namespace VACamera
             this.btnPause = new System.Windows.Forms.Button();
             this.btnRecord = new System.Windows.Forms.Button();
             this.pictureFrame = new System.Windows.Forms.PictureBox();
+            this.prgAudioLevel = new VACamera.VerticalProgressBar();
             this.menuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.signalRecord)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureFrame)).BeginInit();
@@ -101,7 +102,7 @@ namespace VACamera
             // 
             this.aboutToolStripMenuItem.Name = "aboutToolStripMenuItem";
             this.aboutToolStripMenuItem.Size = new System.Drawing.Size(116, 25);
-            this.aboutToolStripMenuItem.Text = "&Phiên bản 2.5";
+            this.aboutToolStripMenuItem.Text = "&Phiên bản 2.6";
             this.aboutToolStripMenuItem.Click += new System.EventHandler(this.aboutToolStripMenuItem_Click);
             // 
             // label1
@@ -235,11 +236,20 @@ namespace VACamera
             this.pictureFrame.TabIndex = 2;
             this.pictureFrame.TabStop = false;
             // 
+            // prgAudioLevel
+            // 
+            this.prgAudioLevel.Location = new System.Drawing.Point(1191, 313);
+            this.prgAudioLevel.Name = "prgAudioLevel";
+            this.prgAudioLevel.Size = new System.Drawing.Size(24, 320);
+            this.prgAudioLevel.TabIndex = 7;
+            this.prgAudioLevel.Visible = false;
+            // 
             // FormMain
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
             this.ClientSize = new System.Drawing.Size(1264, 761);
             this.ControlBox = false;
+            this.Controls.Add(this.prgAudioLevel);
             this.Controls.Add(this.signalRecord);
             this.Controls.Add(this.txtTimeLeft);
             this.Controls.Add(this.txtTimeRun);
@@ -295,6 +305,7 @@ namespace VACamera
         private System.Windows.Forms.PictureBox pictureFrame;
         private System.Windows.Forms.Timer timerRecord;
         private System.Windows.Forms.PictureBox signalRecord;
+        private VerticalProgressBar prgAudioLevel;
     }
 }
 

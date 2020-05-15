@@ -46,6 +46,7 @@ using System.Drawing.Text;
 using System.IO;
 using System.Media;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -160,6 +161,18 @@ namespace VACamera
 #else
             Log.WriteLine("Running with GDI+");
 #endif
+
+            try
+            {
+                foreach (var process in Process.GetProcessesByName("ffmpeg.exe"))
+                {
+                    process.Kill();
+                }
+            } catch (Exception ex)
+            {
+                Log.WriteLine(ex.ToString());
+            }
+
             Hide();
         }
 
@@ -1026,8 +1039,8 @@ namespace VACamera
             totalRenderTime += stopWatch.Elapsed.TotalMilliseconds;
             if (renderCount == 100)
             {
-                double average_frame_time = totalRenderTime / renderCount;
-                Log.WriteLine(renderCount + " frames in average " + average_frame_time + " ms");
+                double fps = renderCount*1000 / totalRenderTime;
+                Log.WriteLine("avergae fps = " + fps);
                 renderCount = 0;
                 totalRenderTime = 0;
             }
@@ -1095,8 +1108,8 @@ namespace VACamera
 #endif
                     // set audio input: use system clock as timestamp
                     (audioDeviceName.Equals("") ? "" : "-f dshow -use_wallclock_as_timestamps 1 -thread_queue_size 64 -i audio=\"{0}\" ") +
-                    // re-sample audio to synchronize with video frame
-                    "-filter_complex \"aresample\" " +
+                    // audio filter: re-sample, add statistic, and then print audio level to ffmpeg stream (ffmpeg uses error stream)
+                    "-af astats=metadata=1:reset=1:length=1:measure_perchannel=none,ametadata=mode=print:key=lavfi.astats.Overall.RMS_level " +
                     // set video output: use hw encoder for intel quick-sync
                     "-r {1} -b:v {2}k -c:v h264_qsv -preset veryfast -y {3} ",
                     // or use hw encoder for nvidia
@@ -1108,11 +1121,16 @@ namespace VACamera
                 ffmpeg.StartInfo.UseShellExecute = false;
                 ffmpeg.StartInfo.CreateNoWindow = true;
                 ffmpeg.StartInfo.RedirectStandardInput = true;
+                ffmpeg.StartInfo.RedirectStandardError = true;
                 ffmpeg.StartInfo.RedirectStandardOutput = true;
+                ffmpeg.ErrorDataReceived += Ffmpeg_ErrorDataReceived;
+                ffmpeg.OutputDataReceived += Ffmpeg_OutputDataReceived;
 
                 Log.WriteLine(ffmpeg.StartInfo.Arguments);
                 ffmpeg.Start();
                 ffmpegInputStream = ffmpeg.StandardInput.BaseStream;
+                ffmpeg.BeginErrorReadLine();
+                ffmpeg.BeginOutputReadLine();
 
                 // track new file
                 AddFileToRecordList(outputFile, false);
@@ -1121,6 +1139,42 @@ namespace VACamera
                 videoRecordState = VideoRecordState.RECORDING;
                 Log.WriteLine(">>> START recording");
             }
+        }
+
+        Regex regex = new Regex(@"RMS_level=(.*)");
+
+        private void Ffmpeg_ErrorDataReceived(object sender, DataReceivedEventArgs e)
+        {
+            // capture RMS_level
+            if (e != null && e.Data != null)
+            {
+                Match match = regex.Match(e.Data);
+                if (match.Success)
+                {
+                    try
+                    {
+                        int value = (int)Convert.ToDouble(match.Groups[1].Value);
+                        value = 100 + 2 * value;
+                        value = value < 0 ? 0 : value;
+                        value = value > 100 ? 100 : value;
+
+                        Log.WriteLine(match.Groups[1].Value + " -> " + value);
+                        if (prgAudioLevel.InvokeRequired)
+                        {
+                            prgAudioLevel.Invoke(new MethodInvoker(() => prgAudioLevel.Value = value));
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.WriteLine(ex.ToString());
+                    }
+                }
+            }
+        }
+       
+        private void Ffmpeg_OutputDataReceived(object sender, DataReceivedEventArgs e)
+        {
+            Log.WriteLine("[FFMPEG Output] " + e.Data);
         }
 
         private void PauseRecording()
@@ -1369,6 +1423,7 @@ namespace VACamera
 
                 settingsToolStripMenuItem.Enabled = false; // do not change settings during recording
                 signalRecord.BackgroundImage = global::VACamera.Properties.Resources.rec_on;
+                prgAudioLevel.Visible = true;
 
                 StartRecording();
             }
@@ -1381,6 +1436,7 @@ namespace VACamera
 
                 btnPause.Enabled = false;
                 signalRecord.BackgroundImage = global::VACamera.Properties.Resources.rec_pause;
+                prgAudioLevel.Value = 0;
 
                 StopRecording(true);
                 //PauseRecording();
@@ -1404,6 +1460,7 @@ namespace VACamera
 
                 settingsToolStripMenuItem.Enabled = true; // can change settings again
                 signalRecord.BackgroundImage = null;
+                prgAudioLevel.Visible = false;
 
                 //StopRecording(false);
                 //Thread.Sleep(1000);

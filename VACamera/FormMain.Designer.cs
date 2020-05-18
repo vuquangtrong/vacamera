@@ -156,9 +156,10 @@ namespace VACamera
             // signalRecord
             // 
             this.signalRecord.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.signalRecord.Location = new System.Drawing.Point(1045, 700);
+            this.signalRecord.Location = new System.Drawing.Point(1045, 705);
             this.signalRecord.Name = "signalRecord";
             this.signalRecord.Size = new System.Drawing.Size(48, 48);
+            this.signalRecord.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
             this.signalRecord.TabIndex = 6;
             this.signalRecord.TabStop = false;
             // 
@@ -166,7 +167,7 @@ namespace VACamera
             // 
             this.btnWriteDisk.Image = global::VACamera.Properties.Resources.burn;
             this.btnWriteDisk.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.btnWriteDisk.Location = new System.Drawing.Point(1212, 717);
+            this.btnWriteDisk.Location = new System.Drawing.Point(12, 709);
             this.btnWriteDisk.Name = "btnWriteDisk";
             this.btnWriteDisk.Size = new System.Drawing.Size(40, 40);
             this.btnWriteDisk.TabIndex = 5;

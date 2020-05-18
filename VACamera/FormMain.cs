@@ -258,10 +258,6 @@ namespace VACamera
 
         private void FormMain_Shown(object sender, EventArgs e)
         {
-            // init render thread
-            videoRenderThread = new Thread(VideoRenderWorker);
-            videoRenderThread.Start();
-
             // start devices at startup
             InitDevices();
         }
@@ -273,7 +269,6 @@ namespace VACamera
                 StopRecording(false);
             }
             StopDevices();
-            StopRender();
             //Delete all file when exit
             DirectoryInfo di = new DirectoryInfo(outputFolder);
             foreach (FileInfo file in di.GetFiles())
@@ -295,6 +290,12 @@ namespace VACamera
                     //});
                 }
             }
+        }
+
+        private void StartRender()
+        {
+            videoRenderThread = new Thread(VideoRenderWorker);
+            videoRenderThread.Start();
         }
 
         private void StopRender()
@@ -551,7 +552,8 @@ namespace VACamera
                 // reset record time
                 UpdateRecordTime(0);
 
-                isPreviewing = true;
+                ResumePreview();
+                StartRender();
             }
 
             Log.WriteLine(settings.ToString());
@@ -592,6 +594,7 @@ namespace VACamera
 
         private void StopDevices()
         {
+            StopRender();
             PausePreview();
 
             try
@@ -635,7 +638,7 @@ namespace VACamera
 
         private bool isDevicesStopped()
         {
-            return ((videoDevice1 != null) || (videoDevice2 != null));
+            return (videoDevice1 == null);
         }
 
 #if !USE_PINNED_MEMORY_BITMAP
@@ -1404,27 +1407,19 @@ namespace VACamera
 
                 UpdateRecordTime(0);
 
-                //InitDevices(); // this process is slow
-                ResumePreview();
+                InitDevices(); // this process is slow
             }
         }
 
         private void settingsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            PausePreview();
+            StopDevices();
 
             using (FormSettings formSettings = new FormSettings())
             {
                 DialogResult result = formSettings.ShowDialog(this);
                 settings = formSettings.Settings;
-                if (result == DialogResult.OK)
-                {
-                    InitDevices();
-                }
-                else
-                {
-                    ResumePreview();
-                }
+                InitDevices();
             }
         }
 
@@ -1492,14 +1487,13 @@ namespace VACamera
                 btnWriteDisk.Enabled = true;
 
                 settingsToolStripMenuItem.Enabled = true; // can change settings again
-                signalRecord.BackgroundImage = null;
+                signalRecord.Image = null;
                 prgAudioLevel.Visible = false;
 
                 //StopRecording(false);
                 //Thread.Sleep(1000);
 
                 StopDevices(); // this method is slow
-                PausePreview();
 
                 btnWriteDisk_Click(btnWriteDisk, EventArgs.Empty);
             }

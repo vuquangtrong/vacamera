@@ -1102,10 +1102,12 @@ namespace VACamera
                     // set audio input: use system clock as timestamp
                     (audioDeviceName.Equals("") ? "" : "-f dshow -use_wallclock_as_timestamps 1 -thread_queue_size 64 -i audio=\"{0}\" ") +
                     // audio filter: re-sample, add statistic, and then print audio level to ffmpeg stream (ffmpeg uses error stream)
-                    "-af astats=metadata=1:reset=1:length=1:measure_perchannel=none,ametadata=mode=print:key=lavfi.astats.Overall.RMS_level " +
+                    "-af astats=metadata=1:reset=1:measure_perchannel=none,ametadata=mode=print:key=lavfi.astats.Overall.RMS_level,ametadata=mode=print:key=lavfi.astats.Overall.RMS_peak " +
                     // set video output: use hw encoder for intel quick-sync
                     "-r {1} -b:v {2}k -c:v h264_qsv -preset veryfast -y {3} ",
                     // or use hw encoder for nvidia
+                    //"-r {1} -b:v {2}k -c:v h264_nvenc -preset fast -y {3} ",
+                    // or use hw encoder for amd
                     //"-r {1} -b:v {2}k -c:v h264_amf -preset fast -y {3} ",
                     audioDeviceName,
                     settings.VideoFrameRate,
@@ -1134,27 +1136,53 @@ namespace VACamera
             }
         }
 
-        Regex regex = new Regex(@"RMS_level=(.*)");
+        Regex RMS_level_regexp = new Regex(@"RMS_level=(.*)");
+        Regex RMS_peak_regexp = new Regex(@"RMS_peak=(.*)");
+        int RMS_max = -100, RMS_min = 0; /* in dB */
+        int audioLevel = 0;
 
         private void Ffmpeg_ErrorDataReceived(object sender, DataReceivedEventArgs e)
         {
             // capture RMS_level
             if (e != null && e.Data != null)
             {
-                Match match = regex.Match(e.Data);
+                Match match = RMS_peak_regexp.Match(e.Data);
                 if (match.Success)
                 {
                     try
                     {
                         int value = (int)Convert.ToDouble(match.Groups[1].Value);
-                        value = 100 + 2 * value;
-                        value = value < 0 ? 0 : value;
-                        value = value > 100 ? 100 : value;
+                        Log.WriteLine("RMS_peak=" + match.Groups[1].Value);
 
-                        Log.WriteLine(match.Groups[1].Value + " -> " + value);
+
+                        if (value > RMS_max)
+                        {
+                            RMS_max = value;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.WriteLine(ex.ToString());
+                    }
+                }
+
+                match = RMS_level_regexp.Match(e.Data);
+                if (match.Success)
+                {
+                    try
+                    {
+                        int value = (int)Convert.ToDouble(match.Groups[1].Value);
+                        Log.WriteLine("RMS_level=" + match.Groups[1].Value);
+
+                        if (value < RMS_min)
+                        {
+                            RMS_min = value;
+                        }
+
+                        audioLevel = (value - RMS_min) * 100 / (RMS_max - RMS_min);
                         if (prgAudioLevel.InvokeRequired)
                         {
-                            prgAudioLevel.Invoke(new MethodInvoker(() => prgAudioLevel.Value = value));
+                            prgAudioLevel.Invoke(new MethodInvoker(() => prgAudioLevel.Value = audioLevel));
                         }
                     }
                     catch (Exception ex)

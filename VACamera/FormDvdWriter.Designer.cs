@@ -48,6 +48,13 @@
             this.txtTimeLeft2 = new System.Windows.Forms.Label();
             this.txtTimeLeft1 = new System.Windows.Forms.Label();
             this.label7 = new System.Windows.Forms.Label();
+            this.btnWrite3 = new System.Windows.Forms.Button();
+            this.listDrive3 = new System.Windows.Forms.ComboBox();
+            this.progressBar3 = new System.Windows.Forms.ProgressBar();
+            this.label4 = new System.Windows.Forms.Label();
+            this.txtStatus3 = new System.Windows.Forms.Label();
+            this.txtTimeLeft3 = new System.Windows.Forms.Label();
+            this.backgroundBurnWorker3 = new System.ComponentModel.BackgroundWorker();
             this.SuspendLayout();
             // 
             // btnWrite1
@@ -94,11 +101,12 @@
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(14, 142);
+            this.label2.Location = new System.Drawing.Point(296, 2);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(58, 21);
             this.label2.TabIndex = 2;
             this.label2.Text = "DVD 2:";
+            this.label2.Visible = false;
             // 
             // progressBar1
             // 
@@ -109,10 +117,11 @@
             // 
             // progressBar2
             // 
-            this.progressBar2.Location = new System.Drawing.Point(16, 169);
+            this.progressBar2.Location = new System.Drawing.Point(212, 2);
             this.progressBar2.Name = "progressBar2";
-            this.progressBar2.Size = new System.Drawing.Size(468, 23);
+            this.progressBar2.Size = new System.Drawing.Size(78, 23);
             this.progressBar2.TabIndex = 3;
+            this.progressBar2.Visible = false;
             // 
             // txtFilename
             // 
@@ -135,11 +144,12 @@
             // txtStatus2
             // 
             this.txtStatus2.AutoSize = true;
-            this.txtStatus2.Location = new System.Drawing.Point(78, 142);
+            this.txtStatus2.Location = new System.Drawing.Point(360, 2);
             this.txtStatus2.Name = "txtStatus2";
             this.txtStatus2.Size = new System.Drawing.Size(73, 21);
             this.txtStatus2.TabIndex = 2;
             this.txtStatus2.Text = "DVD-RW";
+            this.txtStatus2.Visible = false;
             // 
             // listDrive2
             // 
@@ -170,7 +180,6 @@
             // 
             // btnWrite2
             // 
-            this.btnWrite2.Enabled = false;
             this.btnWrite2.Location = new System.Drawing.Point(285, 221);
             this.btnWrite2.Name = "btnWrite2";
             this.btnWrite2.Size = new System.Drawing.Size(40, 40);
@@ -211,7 +220,7 @@
             // txtTimeLeft2
             // 
             this.txtTimeLeft2.AutoSize = true;
-            this.txtTimeLeft2.Location = new System.Drawing.Point(435, 142);
+            this.txtTimeLeft2.Location = new System.Drawing.Point(435, 2);
             this.txtTimeLeft2.Name = "txtTimeLeft2";
             this.txtTimeLeft2.Size = new System.Drawing.Size(49, 21);
             this.txtTimeLeft2.TabIndex = 2;
@@ -239,11 +248,77 @@
             this.label7.TabIndex = 4;
             this.label7.Text = "Dung lượng:";
             // 
+            // btnWrite3
+            // 
+            this.btnWrite3.Enabled = false;
+            this.btnWrite3.Location = new System.Drawing.Point(424, 26);
+            this.btnWrite3.Name = "btnWrite3";
+            this.btnWrite3.Size = new System.Drawing.Size(60, 40);
+            this.btnWrite3.TabIndex = 0;
+            this.btnWrite3.Text = "USB";
+            this.btnWrite3.UseVisualStyleBackColor = true;
+            this.btnWrite3.Visible = false;
+            this.btnWrite3.Click += new System.EventHandler(this.btnWrite3_Click);
+            // 
+            // listDrive3
+            // 
+            this.listDrive3.FormattingEnabled = true;
+            this.listDrive3.Location = new System.Drawing.Point(378, 33);
+            this.listDrive3.Name = "listDrive3";
+            this.listDrive3.Size = new System.Drawing.Size(40, 29);
+            this.listDrive3.TabIndex = 1;
+            this.listDrive3.Visible = false;
+            // 
+            // progressBar3
+            // 
+            this.progressBar3.Location = new System.Drawing.Point(16, 168);
+            this.progressBar3.Name = "progressBar3";
+            this.progressBar3.Size = new System.Drawing.Size(468, 23);
+            this.progressBar3.TabIndex = 6;
+            // 
+            // label4
+            // 
+            this.label4.AutoSize = true;
+            this.label4.Location = new System.Drawing.Point(14, 142);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(42, 21);
+            this.label4.TabIndex = 2;
+            this.label4.Text = "USB:";
+            // 
+            // txtStatus3
+            // 
+            this.txtStatus3.AutoSize = true;
+            this.txtStatus3.Location = new System.Drawing.Point(78, 142);
+            this.txtStatus3.Name = "txtStatus3";
+            this.txtStatus3.Size = new System.Drawing.Size(88, 21);
+            this.txtStatus3.TabIndex = 2;
+            this.txtStatus3.Text = "Removable";
+            // 
+            // txtTimeLeft3
+            // 
+            this.txtTimeLeft3.AutoSize = true;
+            this.txtTimeLeft3.Location = new System.Drawing.Point(435, 142);
+            this.txtTimeLeft3.Name = "txtTimeLeft3";
+            this.txtTimeLeft3.Size = new System.Drawing.Size(49, 21);
+            this.txtTimeLeft3.TabIndex = 2;
+            this.txtTimeLeft3.Text = "00:00";
+            this.txtTimeLeft3.TextAlign = System.Drawing.ContentAlignment.TopRight;
+            this.txtTimeLeft3.Visible = false;
+            // 
+            // backgroundBurnWorker3
+            // 
+            this.backgroundBurnWorker3.WorkerReportsProgress = true;
+            this.backgroundBurnWorker3.WorkerSupportsCancellation = true;
+            this.backgroundBurnWorker3.DoWork += new System.ComponentModel.DoWorkEventHandler(this.backgroundBurnWorker3_DoWork);
+            this.backgroundBurnWorker3.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.backgroundBurnWorker3_ProgressChanged);
+            this.backgroundBurnWorker3.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.backgroundBurnWorker3_RunWorkerCompleted);
+            // 
             // FormDvdWriter
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
             this.ClientSize = new System.Drawing.Size(496, 281);
             this.ControlBox = false;
+            this.Controls.Add(this.progressBar3);
             this.Controls.Add(this.btnWriteAll);
             this.Controls.Add(this.label7);
             this.Controls.Add(this.label3);
@@ -252,14 +327,19 @@
             this.Controls.Add(this.txtFileSize);
             this.Controls.Add(this.txtFilename);
             this.Controls.Add(this.txtTimeLeft1);
+            this.Controls.Add(this.txtTimeLeft3);
+            this.Controls.Add(this.txtStatus3);
             this.Controls.Add(this.txtTimeLeft2);
             this.Controls.Add(this.txtStatus2);
+            this.Controls.Add(this.label4);
             this.Controls.Add(this.txtStatus1);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.label1);
+            this.Controls.Add(this.listDrive3);
             this.Controls.Add(this.listDrive2);
             this.Controls.Add(this.listDrive1);
             this.Controls.Add(this.btnCancel);
+            this.Controls.Add(this.btnWrite3);
             this.Controls.Add(this.btnWrite2);
             this.Controls.Add(this.btnWrite1);
             this.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
@@ -299,5 +379,12 @@
         private System.Windows.Forms.Label txtTimeLeft2;
         private System.Windows.Forms.Label txtTimeLeft1;
         private System.Windows.Forms.Label label7;
+        private System.Windows.Forms.Button btnWrite3;
+        private System.Windows.Forms.ComboBox listDrive3;
+        private System.Windows.Forms.ProgressBar progressBar3;
+        private System.Windows.Forms.Label label4;
+        private System.Windows.Forms.Label txtStatus3;
+        private System.Windows.Forms.Label txtTimeLeft3;
+        private System.ComponentModel.BackgroundWorker backgroundBurnWorker3;
     }
 }

@@ -1,5 +1,6 @@
 ﻿using IMAPI2.Interop;
 using IMAPI2.MediaItem;
+using SharpDX.DirectSound;
 using System;
 using System.ComponentModel;
 using System.IO;
@@ -14,9 +15,11 @@ namespace VACamera
         IMAPI_BURN_VERIFICATION_LEVEL _verificationLevel = IMAPI_BURN_VERIFICATION_LEVEL.IMAPI_BURN_VERIFICATION_NONE;
         bool _isBurning1 = false;
         bool _isBurning2 = false;
+        bool _isBurning3 = false;
 
         BurnData _burnData1 = new BurnData();
         BurnData _burnData2 = new BurnData();
+        FileCopier _fileCopier = new FileCopier();
 
         bool _isRecordSuccess1 = false;
         bool _isRecordSuccess2 = false;
@@ -33,12 +36,16 @@ namespace VACamera
         {
             _sessionName = sessionName;
             _filePath = filePath;
-
+            _fileCopier.OnProgressChanged += _fileCopier_OnProgressChanged;
+            _fileCopier.OnComplete += _fileCopier_OnComplete;
             InitializeComponent();
         }
 
         private void FormDvdWriter_Load(object sender, EventArgs e)
         {
+            bool isHavingDisk = false;
+            bool isHaveUSB = false;
+
             txtFilename.Text = Path.GetFileName(_filePath);
 
             long filesize = (new FileInfo(_filePath)).Length;
@@ -53,44 +60,41 @@ namespace VACamera
             {
                 discMaster = new MsftDiscMaster2();
 
-                if (!discMaster.IsSupportedEnvironment)
+                if (discMaster.IsSupportedEnvironment)
                 {
-                    MessageBox.Show("Không tìm thấy ổ đĩa phù hợp");
+                    foreach (string uniqueRecorderId in discMaster)
+                    {
+                        var discRecorder2 = new MsftDiscRecorder2();
+                        discRecorder2.InitializeDiscRecorder(uniqueRecorderId);
 
-                    DialogResult = DialogResult.Cancel;
-                    Hide();
-                    Close();
-                }
+                        listDrive1.Items.Add(discRecorder2);
+                        listDrive2.Items.Add(discRecorder2);
+                    }
 
-                foreach (string uniqueRecorderId in discMaster)
-                {
-                    var discRecorder2 = new MsftDiscRecorder2();
-                    discRecorder2.InitializeDiscRecorder(uniqueRecorderId);
+                    if (listDrive1.Items.Count <= 0)
+                    {
+                        listDrive1.Enabled = false;
+                        listDrive1.SelectedIndex = -1;
 
-                    listDrive1.Items.Add(discRecorder2);
-                    listDrive2.Items.Add(discRecorder2);
-                }
+                        listDrive2.Enabled = false;
+                        listDrive2.SelectedIndex = -1;
+                    }
+                    else if (listDrive1.Items.Count == 1)
+                    {
+                        listDrive1.SelectedIndex = 0;
 
-                if (listDrive1.Items.Count <= 0)
-                {
-                    listDrive1.Enabled = false;
-                    listDrive1.SelectedIndex = -1;
+                        listDrive2.Enabled = false;
+                        listDrive2.SelectedIndex = 0;
 
-                    listDrive2.Enabled = false;
-                    listDrive2.SelectedIndex = -1;
-                }
-                else if (listDrive1.Items.Count == 1)
-                {
-                    listDrive1.SelectedIndex = 0;
+                        isHavingDisk = true;
+                    }
+                    else
+                    {
+                        listDrive1.SelectedIndex = 0;
 
-                    listDrive2.Enabled = false;
-                    listDrive2.SelectedIndex = 0;
-                }
-                else
-                {
-                    listDrive1.SelectedIndex = 0;
-
-                    listDrive2.SelectedIndex = 1;
+                        listDrive2.SelectedIndex = 1;
+                        isHavingDisk = true;
+                    }
                 }
             }
             catch (Exception ex)
@@ -105,6 +109,34 @@ namespace VACamera
                 {
                     Marshal.ReleaseComObject(discMaster);
                 }
+            }
+
+            var driveList = DriveInfo.GetDrives();
+
+            foreach (DriveInfo drive in driveList)
+            {
+                if (drive.DriveType == DriveType.Removable)
+                {
+                    listDrive3.Items.Add(drive.Name);
+                }
+
+                if (listDrive3.Items.Count > 0)
+                {
+                    listDrive3.SelectedIndex = 0;
+                    isHaveUSB = true;
+                    btnWrite3.Enabled = true;
+                } else
+                {
+                    btnWrite3.Enabled = false;
+                }
+            }
+
+            if (!(isHaveUSB || isHaveUSB))
+            {
+                MessageBox.Show("Không tìm thấy ổ đĩa/USB phù hợp");
+                DialogResult = DialogResult.Cancel;
+                Hide();
+                Close();
             }
 
             // Create the volume label based on the current date if needed
@@ -208,9 +240,39 @@ namespace VACamera
 
         }
 
+        string _dest_path = "";
+
+        private void btnWrite3_Click(object sender, EventArgs e)
+        {
+            if (listDrive3.SelectedIndex == -1)
+            {
+                return;
+            }
+
+            if (_isBurning3)
+            {
+                btnWrite3.Enabled = false;
+                _copy_canceled = true;
+                backgroundBurnWorker3.CancelAsync();
+            }
+            else
+            {
+                _isBurning3 = true;
+                _copy_canceled = false;
+                txtStatus3.Text = "Đang ghi...";
+                _dest_path = listDrive3.Text + txtFilename.Text;
+
+                Log.WriteLine("START Writing to USB");
+                Console.WriteLine(_filePath);
+                Console.WriteLine(_dest_path);
+
+                backgroundBurnWorker3.RunWorkerAsync();
+            }
+        }
+
         private void btnCancel_Click(object sender, EventArgs e)
         {
-            if (_isBurning1 || _isBurning2)
+            if (_isBurning1 || _isBurning2 || _isBurning3)
             {
                 if (MessageBox.Show("Hủy ghi đĩa?", "Cảnh báo", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
                 {
@@ -226,6 +288,16 @@ namespace VACamera
                     try
                     {
                         backgroundBurnWorker2.CancelAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.WriteLine(ex.ToString());
+                    }
+
+                    try
+                    {
+                        _copy_canceled = true;
+                        backgroundBurnWorker3.CancelAsync();
                     }
                     catch (Exception ex)
                     {
@@ -251,10 +323,18 @@ namespace VACamera
                 btnCancel.Enabled = false;
             }
 
-            if (btnWrite2.Enabled && listDrive2.SelectedIndex != -1)
+            //if (btnWrite2.Enabled && listDrive2.SelectedIndex != -1)
+            //{
+            //    btnWrite2_Click(btnWrite2, EventArgs.Empty);
+            //    btnWrite2.Enabled = false;
+            //    btnWriteAll.Enabled = false;
+            //    btnCancel.Enabled = false;
+            //}
+
+            if (btnWrite3.Enabled && listDrive3.SelectedIndex != -1)
             {
-                btnWrite2_Click(btnWrite2, EventArgs.Empty);
-                btnWrite2.Enabled = false;
+                btnWrite3_Click(btnWrite3, EventArgs.Empty);
+                btnWrite3.Enabled = false;
                 btnWriteAll.Enabled = false;
                 btnCancel.Enabled = false;
             }
@@ -456,6 +536,25 @@ namespace VACamera
             }
         }
 
+        private void _fileCopier_OnComplete()
+        {
+            throw new NotImplementedException();
+        }
+
+        bool _copy_canceled = false;
+
+        private void _fileCopier_OnProgressChanged(double Persentage, ref bool Cancel)
+        {
+            Cancel = _copy_canceled;
+            backgroundBurnWorker3.ReportProgress((int)Persentage);
+        }
+
+        private void backgroundBurnWorker3_DoWork(object sender, DoWorkEventArgs e)
+        {
+            Console.WriteLine("DO WORK ON USB");
+            _fileCopier.Copy(_filePath, _dest_path);
+        }
+
         private void backgroundBurnWorker1_ProgressChanged(object sender, ProgressChangedEventArgs e)
         {
             var burnData = (BurnData)e.UserState;
@@ -576,6 +675,11 @@ namespace VACamera
             }
         }
 
+        private void backgroundBurnWorker3_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        {
+            progressBar3.Value = e.ProgressPercentage;
+        }
+
         private void backgroundBurnWorker1_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             txtStatus1.Text = (int)e.Result == 0 ? "Đã ghi xong!" : "Có lỗi trong quá trình ghi đĩa!";
@@ -596,6 +700,17 @@ namespace VACamera
             _isBurning2 = false;
             _isRecordSuccess2 = ((int)e.Result == 0);
             btnWrite2.Enabled = true;
+
+            doAfterBurnWork();
+        }
+
+        private void backgroundBurnWorker3_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            txtStatus3.Text = "Hoàn tất";
+            //progressBar3.Value = 0;
+
+            _isBurning3 = false;
+            btnWrite3.Enabled = true;
 
             doAfterBurnWork();
         }
@@ -967,7 +1082,7 @@ namespace VACamera
 
         private void doAfterBurnWork()
         {
-            if (!(_isBurning1 || _isBurning2))
+            if (!(_isBurning1 || _isBurning2 || _isBurning3))
             {
                 // only clean file if it is already burned to disk
                 //HuongND: Keep file in case fail one DVD disk, must complete 2 DVD discs
